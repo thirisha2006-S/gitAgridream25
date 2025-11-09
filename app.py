@@ -1226,8 +1226,11 @@ def get_deepai_response(user_message, emotion, lang, farmer_profile=None, conver
 def get_dynamic_response(emotion, lang):
     base_msg = base_responses.get(emotion, "I am here for you!")
     return emotion_translations.get(lang, lambda x: x)(base_msg)
+# ---------------------------
 
 # ---------------------------
+
+
 # Streamlit Layout
 # ---------------------------
 st.set_page_config(page_title="AgriDream 🌾", layout="wide", page_icon="🌱")
@@ -1248,6 +1251,7 @@ menu = st.sidebar.radio(
     get_text("select_language", global_lang),
     menu_options
 )
+
 
 st.markdown(f"<h1 style='text-align:center; color:green;'>🌱 {get_text('title', global_lang)}</h1>", unsafe_allow_html=True)
 st.markdown("---")
@@ -1281,7 +1285,7 @@ if menu == get_text("menu_dashboard", global_lang):
     st.subheader("💹 " + get_text("market_dashboard", global_lang))
 
     # Load price data
-    df_prices = pd.read_csv('data/agmarknet_prices.csv')
+    df_prices = pd.read_csv('agmarknet_prices.csv')
 
     # Get top 10 commodities by modal price
     top_commodities = df_prices.nlargest(10, 'Modal_x0020_Price')[['Commodity', 'Modal_x0020_Price', 'State', 'Market', 'District']].drop_duplicates(subset=['Commodity'])
@@ -1315,6 +1319,7 @@ elif menu == get_text("menu_crop_rec", global_lang):
         P = st.slider(get_text("phosphorus", global_lang), 0, 145, 50)
         K = st.slider(get_text("potassium", global_lang), 0, 205, 50)
         ph = st.slider(get_text("ph_level", global_lang), 3.5, 9.9, 6.5)
+        irrigation_type = st.selectbox("Irrigation Type", ["Drip Irrigation", "Sprinkler Irrigation", "Flood Irrigation", "Furrow Irrigation", "Rain-fed", "Manual Irrigation"])
     with col2:
         temperature = st.slider(get_text("temperature", global_lang), 8, 44, 25)
         humidity = st.slider(get_text("humidity", global_lang), 14, 100, 60)
@@ -1331,12 +1336,25 @@ elif menu == get_text("menu_crop_rec", global_lang):
 
         # Irrigation Recommendation
         st.write(f"### {get_text('irrigation_rec', global_lang)}")
+        irrigation_recommendations = {
+            "Drip Irrigation": "Highly efficient for water conservation. Ideal for row crops and vegetables. Reduces water usage by 30-50%.",
+            "Sprinkler Irrigation": "Good for most crops. Provides uniform water distribution. Suitable for medium to large fields.",
+            "Flood Irrigation": "Traditional method, good for rice and wheat. High water usage but effective for flood-tolerant crops.",
+            "Furrow Irrigation": "Excellent for row crops like maize and potatoes. Allows precise water application to plant roots.",
+            "Rain-fed": "Depends entirely on rainfall. Suitable for drought-resistant crops. Requires good soil moisture retention.",
+            "Manual Irrigation": "Labor-intensive but flexible. Good for small plots and when water conservation is critical."
+        }
+
+        selected_irrigation = irrigation_recommendations.get(irrigation_type, "General irrigation practices recommended.")
+        st.info(f"**{irrigation_type}:** {selected_irrigation}")
+
+        # Additional irrigation advice based on rainfall
         if rainfall < 50:
-            st.warning("Low rainfall detected. Implement drip irrigation or frequent watering (2-3 times per week).")
+            st.warning("Low rainfall detected. Consider increasing irrigation frequency or switching to more efficient methods.")
         elif 50 <= rainfall < 100:
-            st.info("Moderate rainfall. Supplement with irrigation during dry spells, about 1-2 times per week.")
+            st.info("Moderate rainfall. Your irrigation method should complement natural rainfall effectively.")
         else:
-            st.success("Good rainfall conditions. Monitor soil moisture and irrigate only if needed.")
+            st.success("Good rainfall conditions. Your irrigation method will provide excellent backup during dry spells.")
 
         # Soil Type Advice
         st.write(f"### {get_text('soil_considerations', global_lang)}")
@@ -1350,12 +1368,98 @@ elif menu == get_text("menu_crop_rec", global_lang):
         }
         st.info(f"**{soil_type} Soil:** {soil_advice.get(soil_type, 'General soil management recommended.')}")
 
+        # Disease Prevention and Management
+        st.write("### 🛡️ Disease Prevention & Management")
+
+        # Common diseases based on recommended crops
+        disease_info = {
+            "Rice": {
+                "diseases": ["Bacterial Blight", "Blast Disease", "Brown Spot"],
+                "causes": "High humidity, poor drainage, infected seeds",
+                "prevention": "Use disease-resistant varieties, proper spacing, avoid overhead irrigation, remove infected plants immediately",
+                "treatment": "Copper-based fungicides, neem oil sprays, biological control agents"
+            },
+            "Wheat": {
+                "diseases": ["Rust", "Powdery Mildew", "Wheat Scab"],
+                "causes": "High humidity, dense planting, poor air circulation",
+                "prevention": "Crop rotation, resistant varieties, proper spacing, timely sowing",
+                "treatment": "Triazole fungicides, sulfur-based sprays, cultural practices"
+            },
+            "Maize": {
+                "diseases": ["Corn Borer", "Downy Mildew", "Rust"],
+                "causes": "Warm humid conditions, poor soil drainage, insect vectors",
+                "prevention": "Field sanitation, resistant hybrids, proper irrigation, biological control",
+                "treatment": "Insecticides, fungicides, pheromone traps, neem-based products"
+            },
+            "Cotton": {
+                "diseases": ["Bacterial Blight", "Fusarium Wilt", "Verticillium Wilt"],
+                "causes": "Soil-borne pathogens, infected seeds, poor drainage",
+                "prevention": "Soil sterilization, certified seeds, crop rotation, resistant varieties",
+                "treatment": "Systemic fungicides, soil amendments, biological control"
+            },
+            "Sugarcane": {
+                "diseases": ["Red Rot", "Smuts", "Rust"],
+                "causes": "Fungal spores, infected setts, humid conditions",
+                "prevention": "Hot water treatment of setts, resistant varieties, proper drainage",
+                "treatment": "Systemic fungicides, field sanitation, biological control"
+            },
+            "Tomato": {
+                "diseases": ["Late Blight", "Fusarium Wilt", "Bacterial Spot"],
+                "causes": "High humidity, infected seeds, poor air circulation",
+                "prevention": "Resistant varieties, proper spacing, stake plants, avoid wet foliage",
+                "treatment": "Copper fungicides, biological control, neem oil sprays"
+            },
+            "Potato": {
+                "diseases": ["Late Blight", "Early Blight", "Black Scurf"],
+                "causes": "Cool wet weather, infected tubers, poor storage",
+                "prevention": "Certified seed potatoes, crop rotation, proper hilling, good drainage",
+                "treatment": "Protective fungicides, copper sprays, biological fungicides"
+            },
+            "Onion": {
+                "diseases": ["Downy Mildew", "Purple Blotch", "Basal Rot"],
+                "causes": "High humidity, poor air circulation, infected seeds",
+                "prevention": "Proper spacing, good drainage, resistant varieties, field sanitation",
+                "treatment": "Fungicides, copper sprays, biological control agents"
+            }
+        }
+
+        # Show disease information for recommended crops
+        for crop in recommended_crops[:2]:  # Show for top 2 crops
+            if crop in disease_info:
+                info = disease_info[crop]
+                with st.expander(f"🦠 {crop} Disease Management"):
+                    st.write(f"**Common Diseases:** {', '.join(info['diseases'])}")
+                    st.write(f"**Causes:** {info['causes']}")
+                    st.write(f"**Prevention:** {info['prevention']}")
+                    st.write(f"**Treatment:** {info['treatment']}")
+
+        # General Disease Prevention Tips
+        st.write("### 🛡️ General Disease Prevention Tips")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.write("**🌱 Cultural Practices:**")
+            st.write("• Crop rotation (avoid planting same crop family)")
+            st.write("• Proper plant spacing for air circulation")
+            st.write("• Remove and destroy infected plant debris")
+            st.write("• Use certified, disease-free seeds")
+            st.write("• Practice field sanitation")
+
+        with col2:
+            st.write("**💊 Chemical Control:**")
+            st.write("• Use appropriate fungicides preventively")
+            st.write("• Apply pesticides at recommended times")
+            st.write("• Rotate different chemical classes")
+            st.write("• Follow safety guidelines and dosages")
+            st.write("• Consider organic alternatives when possible")
+
         # General tips
         st.write(f"### {get_text('general_tips', global_lang)}")
         st.write("- Water early morning or evening to reduce evaporation")
         st.write("- Use mulch to retain soil moisture")
         st.write("- Monitor soil moisture levels regularly")
         st.write("- Test soil pH and nutrients annually")
+        st.write("- Regular field monitoring for early disease detection")
+        st.write("- Maintain proper plant nutrition for disease resistance")
 
 # ---------------------------
 # Price Forecasting
@@ -1364,7 +1468,7 @@ elif menu == get_text("menu_price", global_lang):
     st.subheader("💹 " + get_text("live_price_info", global_lang))
 
     # Load price data
-    df = pd.read_csv('data/agmarknet_prices.csv')
+    df = pd.read_csv('agmarknet_prices.csv')
 
     # State selection - include all Indian states
     available_states = sorted(df['State'].unique())
