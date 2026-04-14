@@ -1910,7 +1910,11 @@ menu_options = [
     get_text("menu_price", global_lang),
     get_text("menu_weather", global_lang),
     get_text("menu_disease", global_lang),
-    get_text("menu_emotion", global_lang)
+    get_text("menu_emotion", global_lang),
+    "🎙️ Voice Assistant",
+    "🏪 Price Comparator",
+    "📅 Crop Calendar",
+    "💊 Fertilizer Calc"
 ]
 menu = st.sidebar.radio(
     get_text("select_language", global_lang),
@@ -5217,3 +5221,438 @@ elif menu == get_text("menu_emergency", global_lang):
         alert_msg = emotion_translations.get(lang_choice, lambda x:x)(base_msg)
         st.warning(alert_msg)
         st.balloons()
+
+
+# ============================================================
+# 🎙️ VOICE ASSISTANT
+# ============================================================
+elif menu == "🎙️ Voice Assistant":
+    st.markdown("""
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 15px; margin: 10px 0;">
+        <h2 style="color: white; margin: 0;">🎙️ Voice Assistant</h2>
+        <p style="color: white; opacity: 0.9;">Speak to get instant answers! (Works in Hindi, English, Tamil)</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Voice input using Streamlit's audio input
+    st.markdown("### 🎤 Speak or Type Your Query")
+    
+    # Text input as fallback
+    voice_query = st.text_input(
+        "Type your question (or use voice if available):",
+        placeholder="e.g., What is tomato price in Maharashtra?",
+        key="voice_query"
+    )
+    
+    # Quick voice command buttons
+    st.markdown("### ⚡ Quick Commands (Click to Ask)")
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        if st.button("📊 Today's Price"):
+            voice_query = "What is today's price for tomato?"
+    with col2:
+        if st.button("🌾 Crop Recommendation"):
+            voice_query = "Which crop should I grow?"
+    with col3:
+        if st.button("🌤️ Weather Update"):
+            voice_query = "What's the weather in my area?"
+    
+    # Process query
+    if voice_query:
+        st.markdown(f"**You asked:** {voice_query}")
+        
+        # Simple keyword-based responses (can be upgraded to AI)
+        query_lower = voice_query.lower()
+        
+        # Price related queries
+        if any(word in query_lower for word in ['price', 'भाव', 'cost', 'rate']):
+            st.markdown("### 💰 Price Information")
+            # Try to get price data
+            try:
+                df_prices = pd.read_csv('agmarknet_prices.csv')
+                
+                # Find crop mentioned
+                crops = ['rice', 'wheat', 'tomato', 'potato', 'onion', 'cotton', 'maize', 'sugarcane']
+                mentioned_crop = None
+                for crop in crops:
+                    if crop in query_lower:
+                        mentioned_crop = crop.title()
+                        break
+                
+                if mentioned_crop:
+                    crop_data = df_prices[df_prices['Commodity'].str.lower() == mentioned_crop.lower()]
+                    if not crop_data.empty:
+                        avg_price = int(crop_data['Modal_x0020_Price'].mean())
+                        st.success(f"📊 {mentioned_crop} current price: ₹{avg_price}/quintal")
+                    else:
+                        st.info(f"📊 {mentioned_crop} price data available. Check Price Forecasting page for details.")
+                else:
+                    st.info("💡 Try specifying a crop like: tomato, rice, wheat, onion")
+                    st.write("Use the **Price Forecasting** page for detailed prices!")
+            except Exception as e:
+                st.info("💡 Use the **Price Forecasting** page for detailed prices!")
+        
+        # Weather related queries
+        elif any(word in query_lower for word in ['weather', 'मौसम', 'rain', 'temperature']):
+            st.markdown("### 🌤️ Weather Information")
+            
+            # Try to get weather
+            from app import get_weather, INDIAN_STATE_CAPITALS
+            states = list(INDIAN_STATE_CAPITALS.keys())
+            mentioned_state = None
+            for state in states:
+                if state.lower() in query_lower:
+                    mentioned_state = state
+                    break
+            
+            if mentioned_state:
+                weather, error = get_weather(mentioned_state)
+                if weather:
+                    st.success(f"🌤️ {mentioned_state}: {weather['temperature']}°C, {weather['humidity']}% humidity")
+                else:
+                    st.info("Weather data temporarily unavailable. Check Weather page!")
+            else:
+                st.info("💡 Try specifying a state like: Maharashtra, Tamil Nadu, Karnataka")
+        
+        # Crop recommendation queries
+        elif any(word in query_lower for word in ['crop', 'grow', 'plant', 'फसल', 'खेती']):
+            st.markdown("### 🌾 Crop Recommendation")
+            st.info("Use the **Crop Recommendation** page to get personalized suggestions based on your soil and location!")
+        
+        # Disease queries
+        elif any(word in query_lower for word in ['disease', 'sick', 'pest', 'बीमारी']):
+            st.markdown("### 🩺 Disease Detection")
+            st.info("Upload a photo of your plant on the **Disease Detection** page for AI-powered diagnosis!")
+        
+        # General help
+        elif any(word in query_lower for word in ['help', 'help', 'guide', 'मदद']):
+            st.markdown("""
+            ### 🎯 How I Can Help You:
+            
+            - **Price queries**: "What is tomato price?"
+            - **Weather**: "What's weather in Maharashtra?"
+            - **Crops**: "Which crop should I grow?"
+            - **Disease**: "My plant has yellow leaves"
+            
+            Use the menu on the left to access all features!
+            """)
+        
+        else:
+            st.markdown("""
+            ### 💡 I Can Help You With:
+            
+            - 📊 **Prices**: Ask "What's tomato price?"
+            - 🌤️ **Weather**: Ask "What's weather in Maharashtra?"
+            - 🌾 **Crops**: Ask "Which crop should I grow?"
+            - 🩺 **Disease**: Ask "My plant is sick"
+            
+            Or use the menu on the left to access all features!
+            """)
+
+
+# ============================================================
+# 🏪 MANDI PRICE COMPARATOR
+# ============================================================
+elif menu == "🏪 Price Comparator":
+    st.markdown("""
+    <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 20px; border-radius: 15px; margin: 10px 0;">
+        <h2 style="color: white; margin: 0;">🏪 Mandi Price Comparator</h2>
+        <p style="color: white; opacity: 0.9;">Find the BEST market to sell your crop! Compare prices across markets.</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Load price data
+    try:
+        df_prices = pd.read_csv('agmarknet_prices.csv')
+        
+        # Select crop and state
+        col1, col2 = st.columns(2)
+        with col1:
+            compare_crop = st.selectbox("🌾 Select Crop", df_prices['Commodity'].unique())
+        with col2:
+            compare_state = st.selectbox("📍 Select State", df_prices['State'].unique())
+        
+        # Filter data
+        crop_data = df_prices[(df_prices['Commodity'] == compare_crop) & 
+                              (df_prices['State'] == compare_state)]
+        
+        if not crop_data.empty:
+            # Get market-wise prices
+            market_prices = crop_data.groupby('Market')['Modal_x0020_Price'].agg(['mean', 'min', 'max', 'count'])
+            market_prices = market_prices[market_prices['count'] >= 3]  # At least 3 records
+            market_prices = market_prices.sort_values('mean', ascending=False)
+            
+            if not market_prices.empty:
+                st.markdown("### 📊 Market Prices (Best to Lowest)")
+                
+                # Best market highlight
+                best_market = market_prices.index[0]
+                best_price = int(market_prices.iloc[0]['mean'])
+                
+                st.markdown(f"""
+                <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); padding: 20px; border-radius: 15px; margin: 15px 0; text-align: center;">
+                    <h3 style="color: white; margin: 0;">🏆 Best Market to Sell: {best_market}</h3>
+                    <h2 style="color: white; margin: 10px 0;">💰 ₹{best_price}/quintal</h2>
+                    <p style="color: white; opacity: 0.9;">Sell here for maximum profit!</p>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                # Show all markets
+                st.markdown("### All Markets Comparison")
+                for idx, (market, row) in enumerate(market_prices.iterrows(), 1):
+                    price = int(row['mean'])
+                    min_p = int(row['min'])
+                    max_p = int(row['max'])
+                    
+                    if idx == 1:
+                        color = "🟢"
+                    elif idx == 2:
+                        color = "🟡"
+                    else:
+                        color = "⚪"
+                    
+                    st.write(f"{color} **{idx}. {market}**: ₹{price}/quintal (Range: ₹{min_p}-₹{max_p})")
+                
+                # Price difference
+                lowest_price = int(market_prices.iloc[-1]['mean'])
+                savings = best_price - lowest_price
+                
+                st.markdown(f"💡 **Tip:** Selling at {best_market} instead of the lowest market can earn you **₹{savings}/quintal** extra!")
+            else:
+                st.warning("Not enough market data for this crop in selected state. Try a different combination.")
+        else:
+            st.warning("No price data available for this crop-state combination.")
+            
+    except Exception as e:
+        st.error(f"Error loading price data: {e}")
+        st.info("Please ensure agmarknet_prices.csv is available.")
+
+
+# ============================================================
+# 📅 CROP CALENDAR
+# ============================================================
+elif menu == "📅 Crop Calendar":
+    st.markdown("""
+    <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 20px; border-radius: 15px; margin: 10px 0;">
+        <h2 style="color: white; margin: 0;">📅 Crop Calendar</h2>
+        <p style="color: white; opacity: 0.9;">Visual timeline for planting and harvesting. Plan your farm activities!</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Crop season data
+    crop_calendar = {
+        "Rice (Kharif)": {
+            "plant": "June-July",
+            "harvest": "October-November",
+            "duration": "120-150 days",
+            "season": "Kharif",
+            "color": "#4CAF50"
+        },
+        "Wheat (Rabi)": {
+            "plant": "November-December",
+            "harvest": "March-April",
+            "duration": "120-150 days",
+            "season": "Rabi",
+            "color": "#FFC107"
+        },
+        "Cotton": {
+            "plant": "April-May",
+            "harvest": "October-November",
+            "duration": "150-180 days",
+            "season": "Kharif",
+            "color": "#FF5722"
+        },
+        "Maize": {
+            "plant": "June-July / Oct-Nov",
+            "harvest": "September-October / Feb-March",
+            "duration": "90-120 days",
+            "season": "Kharif/Rabi",
+            "color": "#9C27B0"
+        },
+        "Sugarcane": {
+            "plant": "October-November",
+            "harvest": "December-May",
+            "duration": "12-18 months",
+            "season": "Annual",
+            "color": "#3F51B5"
+        },
+        "Tomato": {
+            "plant": "June-July / Oct-Nov",
+            "harvest": "Sept-Oct / Feb-March",
+            "duration": "90-120 days",
+            "season": "All Year",
+            "color": "#E91E63"
+        },
+        "Onion": {
+            "plant": "Sep-Nov / Jan-Feb",
+            "harvest": "Feb-April / May-June",
+            "duration": "90-120 days",
+            "season": "Rabi/Kharif",
+            "color": "#795548"
+        },
+        "Potato": {
+            "plant": "October-November",
+            "harvest": "February-March",
+            "duration": "90-120 days",
+            "season": "Rabi",
+            "color": "#FF9800"
+        }
+    }
+    
+    # Current month
+    from datetime import datetime
+    current_month = datetime.now().month
+    current_season = "Kharif" if 6 <= current_month <= 10 else "Rabi" if 11 <= current_month <= 3 else "Zaid"
+    
+    st.markdown(f"### 📆 Current Season: **{current_season}** (Month {current_month})")
+    
+    # Show crops by season
+    st.markdown("### 🌱 Crops for Current Season")
+    
+    for crop, info in crop_calendar.items():
+        if current_season in info['season'] or "Both" in info['season']:
+            st.markdown(f"""
+            <div style="background-color: {info['color']}20; border-left: 5px solid {info['color']}; 
+                        padding: 15px; border-radius: 8px; margin: 10px 0;">
+                <h4 style="margin: 0; color: {info['color']};">🌾 {crop}</h4>
+                <p style="margin: 5px 0;"><strong>Plant:</strong> {info['plant']} | <strong>Harvest:</strong> {info['harvest']}</p>
+                <p style="margin: 0; color: #666;"><strong>Duration:</strong> {info['duration']}</p>
+            </div>
+            """, unsafe_allow_html=True)
+    
+    # Full calendar view
+    st.markdown("### 📅 Full Season Calendar")
+    
+    # Create a simple visual calendar
+    seasons = {
+        "Kharif (June-Oct)": ["Rice", "Cotton", "Maize", "Soybean"],
+        "Rabi (Nov-Mar)": ["Wheat", "Mustard", "Potato", "Chickpea"],
+        "Zaid (Mar-Jun)": ["Watermelon", "Muskmelon", "Moong Bean"]
+    }
+    
+    for season, crops in seasons.items():
+        st.markdown(f"**{season}:** " + ", ".join(crops))
+    
+    # Visual timeline
+    st.markdown("### 🌱 Growth Timeline Example (Rice)")
+    st.markdown("""
+    <div style="background: linear-gradient(90deg, #e8f5e9 0%, #c8e6c9 50%, #a5d6a7 100%); 
+                padding: 15px; border-radius: 10px; margin: 15px 0;">
+        <div style="display: flex; justify-content: space-between; text-align: center;">
+            <div>
+                <div style="font-size: 24px;">🌱</div>
+                <div style="font-size: 12px;">June<br>Plant</div>
+            </div>
+            <div>
+                <div style="font-size: 24px;">🌿</div>
+                <div style="font-size: 12px;">July-Aug<br>Growth</div>
+            </div>
+            <div>
+                <div style="font-size: 24px;">🌾</div>
+                <div style="font-size: 12px;">Sept-Oct<br>Maturity</div>
+            </div>
+            <div>
+                <div style="font-size: 24px;">📦</div>
+                <div style="font-size: 12px;">Oct-Nov<br>Harvest</div>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+
+# ============================================================
+# 💊 FERTILIZER CALCULATOR
+# ============================================================
+elif menu == "💊 Fertilizer Calc":
+    st.markdown("""
+    <div style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); padding: 20px; border-radius: 15px; margin: 10px 0;">
+        <h2 style="color: white; margin: 0;">💊 Fertilizer Calculator</h2>
+        <p style="color: white; opacity: 0.9;">Enter your soil test values and get exact fertilizer recommendations!</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Input soil test values
+    st.markdown("### 🧪 Enter Soil Test Values")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        soil_n = st.number_input("Nitrogen (N) - kg/ha", min_value=0, value=150)
+        soil_p = st.number_input("Phosphorus (P) - kg/ha", min_value=0, value=25)
+    with col2:
+        soil_k = st.number_input("Potassium (K) - kg/ha", min_value=0, value=150)
+        ph_level = st.slider("Soil pH", 4.0, 9.0, 6.5)
+    
+    crop_for_fert = st.selectbox("🌾 Select Crop", 
+        ["Rice", "Wheat", "Cotton", "Maize", "Tomato", "Potato", "Onion"])
+    
+    if st.button("🧮 Calculate Fertilizer"):
+        # Recommended NPK values for different crops (kg/ha)
+        recommendations = {
+            "Rice": {"N": 100, "P": 50, "K": 50},
+            "Wheat": {"N": 120, "P": 60, "K": 40},
+            "Cotton": {"N": 100, "P": 50, "K": 50},
+            "Maize": {"N": 120, "P": 60, "K": 40},
+            "Tomato": {"N": 150, "P": 100, "K": 100},
+            "Potato": {"N": 120, "P": 80, "K": 100},
+            "Onion": {"N": 100, "P": 60, "K": 80}
+        }
+        
+        req = recommendations.get(crop_for_fert, {"N": 100, "P": 50, "K": 50})
+        
+        # Calculate what to add (required - existing)
+        add_n = max(0, req["N"] - soil_n)
+        add_p = max(0, req["P"] - soil_p)
+        add_k = max(0, req["K"] - soil_k)
+        
+        st.markdown("### 📋 Fertilizer Recommendation")
+        
+        # Display in a nice format
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            if add_n > 0:
+                st.error(f"🌿 Urea: {int(add_n/2.2)} kg/acre\n(Add {add_n} kg N)")
+            else:
+                st.success(f"✅ Nitrogen: Sufficient\n(Current: {soil_n} kg)")
+        
+        with col2:
+            if add_p > 0:
+                st.warning(f"💛 DAP: {int(add_p/0.46)} kg/acre\n(Add {add_p} kg P)")
+            else:
+                st.success(f"✅ Phosphorus: Sufficient\n(Current: {soil_p} kg)")
+        
+        with col3:
+            if add_k > 0:
+                st.info(f"💜 MOP: {int(add_k/0.6)} kg/acre\n(Add {add_k} kg K)")
+            else:
+                st.success(f"✅ Potassium: Sufficient\n(Current: {soil_k} kg)")
+        
+        # Total cost estimate
+        urea_price = 300  # per 50kg
+        dap_price = 1350  # per 50kg
+        mop_price = 900   # per 50kg
+        
+        total_cost = (add_n/2.2 * urea_price/50) + (add_p/0.46 * dap_price/50) + (add_k/0.6 * mop_price/50)
+        
+        st.markdown(f"""
+        <div style="background-color: #e3f2fd; padding: 15px; border-radius: 10px; margin: 15px 0;">
+            <h4 style="margin: 0;">💰 Estimated Cost: ₹{int(total_cost)}/acre</h4>
+            <p style="margin: 5px 0; color: #666;">Based on average fertilizer prices. Actual prices may vary.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # pH recommendations
+        st.markdown("### 🌱 pH Recommendations")
+        if ph_level < 5.5:
+            st.warning("⚠️ Soil is acidic. Add lime: 200-300 kg/acre")
+        elif ph_level > 8.5:
+            st.warning("⚠️ Soil is alkaline. Add gypsum: 200-300 kg/acre")
+        else:
+            st.success("✅ pH is in optimal range for most crops!")
+        
+        # Tips
+        st.markdown("### 💡 Tips")
+        st.write("- Apply urea in 2-3 split doses for better efficiency")
+        st.write("- DAP and MOP are best applied at planting time")
+        st.write("- Add organic matter (compost) to improve soil health")
