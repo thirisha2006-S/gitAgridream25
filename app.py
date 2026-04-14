@@ -2430,12 +2430,13 @@ elif menu == get_text("menu_crop_rec", global_lang):
         
         # Display each crop with reasoning
         for i, (crop, conf) in enumerate(zip(recommended_crops, confidences), 1):
-            st.markdown(f"**{i}. {crop}** - {get_text('confidence', global_lang)}: {conf:.1f}%")
+            crop_display = crop.title()  # Show "Rice" instead of "rice"
+            st.markdown(f"**{i}. {crop_display}** - {get_text('confidence', global_lang)}: {conf:.1f}%")
             
             # Show reasoning for this crop
             if crop in reasoning:
                 crop_reasoning = reasoning[crop]
-                with st.expander(f"🎯 Why {crop}?"):
+                with st.expander(f"🎯 Why {crop_display}?"):
                     for reason in crop_reasoning['reasons']:
                         st.write(f"• {reason}")
                     
@@ -2444,8 +2445,10 @@ elif menu == get_text("menu_crop_rec", global_lang):
                         st.caption(f"📌 {factor}")
             
             # Get profit info for this crop - ENHANCED CARD WITH PLANT CYCLE
-            if crop in CROP_PROFIT_INFO:
-                profit = CROP_PROFIT_INFO[crop]
+            # Use title() to match keys (ML returns lowercase like "rice", dict has "Rice")
+            crop_key = crop.title()
+            if crop_key in CROP_PROFIT_INFO:
+                profit = CROP_PROFIT_INFO[crop_key]
                 
                 # Get duration in days for timeline calculation
                 duration_str = profit.get('growth_period', '120 days')
@@ -2478,7 +2481,7 @@ elif menu == get_text("menu_crop_rec", global_lang):
                 # Create enhanced card with all info
                 st.markdown(f"""
                 <div style="background-color: #f0f8ff; padding: 15px; border-radius: 10px; margin: 10px 0; border-left: 5px solid #28a745;">
-                    <h3 style="color: #28a745; margin-top: 0;">🌾 {crop}</h3>
+                    <h3 style="color: #28a745; margin-top: 0;">🌾 {crop_display}</h3>
                     <table style="width: 100%;">
                         <tr>
                             <td><strong>📊 Confidence:</strong></td>
