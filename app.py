@@ -1871,40 +1871,116 @@ if menu == get_text("menu_dashboard", global_lang):
     st.subheader("🌾 " + get_text("farm_intelligence_center", global_lang))
     st.write("📊 Your personalized farm decision support system")
     
+    # === 0. QUICK CONTEXT SELECTOR ===
+    st.markdown("### 📍 Quick Setup (for personalized decisions)")
+    ctx_col1, ctx_col2 = st.columns(2)
+    with ctx_col1:
+        dashboard_state = st.selectbox("📍 Your State", 
+            ['Maharashtra', 'Tamil Nadu', 'Uttar Pradesh', 'Karnataka', 'Gujarat', 
+             'Madhya Pradesh', 'Punjab', 'West Bengal', 'Andhra Pradesh', 'Telangana'], 
+            key="dash_state")
+    with ctx_col2:
+        dashboard_crop = st.selectbox("🌾 Your Main Crop", 
+            ['Rice', 'Wheat', 'Cotton', 'Tomato', 'Potato', 'Onion', 'Maize', 'Sugarcane'],
+            key="dash_crop")
+    
     # Load price data
     try:
         df_prices = pd.read_csv('agmarknet_prices.csv')
         
-        # Get analysis data
-        trends = analyze_price_trends(df_prices)
+        # Get analysis data - filter by state if available
+        state_prices = df_prices[df_prices['State'] == dashboard_state] if dashboard_state in df_prices['State'].values else df_prices
+        trends = analyze_price_trends(state_prices if len(state_prices) > 0 else df_prices)
         
-        # === 1. TODAY'S DECISION PANEL (HERO SECTION) ===
-        st.markdown("### 🎯 Today's Decision")
-        
-        # Get weather if available
+        # Get weather for selected state
         weather_data = None
+        weather_reason = ""
         try:
-            weather_data, _ = get_weather("Delhi")  # Default city
+            weather_data, _ = get_weather(dashboard_state.split()[0])
         except:
-            pass
+            try:
+                weather_data, _ = get_weather("Delhi")
+            except:
+                pass
         
-        action_level, decisions = get_decision_recommendation(trends, weather_data)
+        # === 1. TOP STRIP - INSTANT SITUATION ===
+        st.markdown("---")
         
-        # Decision banner
-        decision_color = "#28a745" if action_level == "🟢" else "#ffc107" if action_level == "🟡" else "#dc3545"
+        # Get current price for user's crop
+        crop_price_data = state_prices[state_prices['Commodity'] == dashboard_crop] if len(state_prices) > 0 else df_prices[df_prices['Commodity'] == dashboard_crop]
+        current_price = int(crop_price_data['Modal_x0020_Price'].mean()) if not crop_price_data.empty else 2000
+        
+        # Calculate trend for user's crop
+        crop_trend = trends.get(dashboard_crop, "→ stable")
+        
+        # Weather summary
+        weather_summary = "Clear"
+        if weather_data:
+            temp = weather_data.get('temperature', 0)
+            humidity = weather_data.get('humidity', 0)
+            weather_summary = f"{temp}°C, {humidity}% humidity"
+            if weather_data.get('rainfall', 0) > 15:
+                weather_summary += ", Rain expected"
+        
+        # Quick status strip
         st.markdown(f"""
-        <div style="background-color: {decision_color}; padding: 20px; border-radius: 10px; margin: 10px 0; text-align: center;">
-            <h2 style="color: white; margin: 0;">{action_level} Farm Status: {action_level.replace('🟢', 'SAFE').replace('🟡', 'CAUTION').replace('🔴', 'ALERT')}</h2>
+        <div style="display: flex; justify-content: space-between; background-color: #f0f0f0; padding: 15px; border-radius: 10px; margin: 10px 0;">
+            <div><strong>📍 State:</strong> {dashboard_state}</div>
+            <div><strong>🌾 Crop:</strong> {dashboard_crop}</div>
+            <div><strong>💰 Price:</strong> ₹{current_price} ({crop_trend})</div>
+            <div><strong>🌤️ Weather:</strong> {weather_summary}</div>
         </div>
         """, unsafe_allow_html=True)
         
-        # Decision details
+        # === 2. MAIN DECISION CARD (HERO SECTION) ===
+        st.markdown("### 🎯 Today's Decision")
+        
+        action_level, decisions = get_decision_recommendation(trends, weather_data)
+        
+        # Calculate money impact
+        money_impact = "₹0"
+        if "increasing" in str(decisions):
+            money_impact = f"+₹{int(current_price * 0.05)} potential gain"
+        elif "decreasing" in str(decisions):
+            money_impact = f"-₹{int(current_price * 0.05)} potential loss"
+        
+        # Decision banner
+        decision_color = "#28a745" if action_level == "🟢" else "#ffc107" if action_level == "🟡" else "#dc3545"
+        decision_text = "SAFE - Monitor crops" if action_level == "🟢" else "CAUTION - Plan ahead" if action_level == "🟡" else "ALERT - Take action"
+        
+        st.markdown(f"""
+        <div style="background-color: {decision_color}; padding: 25px; border-radius: 15px; margin: 15px 0; text-align: center;">
+            <h1 style="color: white; margin: 0;">{action_level} {decision_text}</h1>
+            <p style="color: white; font-size: 18px; margin: 10px 0;">💰 {money_impact}</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Decision reasons
         for decision in decisions:
             st.write(decision)
         
         st.markdown("---")
         
-        # === 2. BEST & WORST CROPS TODAY ===
+        # === 3. QUICK ACTION BUTTONS ===
+        st.markdown("### ⚡ Quick Actions")
+        action_cols = st.columns(4)
+        
+        with action_cols[0]:
+            if st.button("📈 Price Forecast", key="action_price"):
+                st.switch_page(get_text("menu_price", global_lang))
+        with action_cols[1]:
+            if st.button("🌾 Crop Recommendation", key="action_crop"):
+                st.switch_page(get_text("menu_crop_rec", global_lang))
+        with action_cols[2]:
+            if st.button("🦠 Detect Disease", key="action_disease"):
+                st.switch_page(get_text("menu_disease", global_lang))
+        with action_cols[3]:
+            if st.button("🌤️ View Weather", key="action_weather"):
+                st.switch_page(get_text("menu_weather", global_lang))
+        
+        st.markdown("---")
+        
+        # === 4. BEST & WORST CROPS TODAY ===
         col1, col2 = st.columns(2)
         
         with col1:
