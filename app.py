@@ -2100,7 +2100,7 @@ if menu == get_text("menu_dashboard", global_lang):
     st.write("📊 Your personalized farm decision support system")
     
     # === 0. QUICK CONTEXT SELECTOR ===
-    st.markdown("### 📍 Quick Setup (for personalized decisions)")
+    st.markdown("### 📍 Your Farm Overview")
     ctx_col1, ctx_col2 = st.columns(2)
     with ctx_col1:
         dashboard_state = st.selectbox("📍 Your State", 
@@ -2160,8 +2160,12 @@ if menu == get_text("menu_dashboard", global_lang):
         </div>
         """, unsafe_allow_html=True)
         
-        # === 2. MAIN DECISION CARD (HERO SECTION) ===
-        st.markdown("### 🎯 Today's Decision")
+        # === 2. MAIN DECISION CARD (HERO SECTION) - REDESIGNED ===
+        st.markdown("""
+        <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 20px; border-radius: 15px; margin: 15px 0;">
+            <h2 style="color: white; margin: 0; text-align: center;">🚦 TODAY'S DECISION</h2>
+        </div>
+        """, unsafe_allow_html=True)
         
         action_level, decisions = get_decision_recommendation(trends, weather_data)
         
@@ -2172,14 +2176,31 @@ if menu == get_text("menu_dashboard", global_lang):
         elif "decreasing" in str(decisions):
             money_impact = f"-₹{int(current_price * 0.05)} potential loss"
         
-        # Decision banner
+        # Decision banner - MORE BOLD
         decision_color = "#28a745" if action_level == "🟢" else "#ffc107" if action_level == "🟡" else "#dc3545"
-        decision_text = "SAFE - Monitor crops" if action_level == "🟢" else "CAUTION - Plan ahead" if action_level == "🟡" else "ALERT - Take action"
+        decision_text = "SAFE - You're doing well" if action_level == "🟢" else "CAUTION - Plan ahead" if action_level == "🟡" else "ALERT - Take action NOW"
+        
+        # Generate WHY based on conditions
+        why_message = ""
+        if action_level == "🟢":
+            why_message = "Prices are stable and weather conditions are normal in your area."
+        elif action_level == "🟡":
+            why_message = "Some price changes detected. Monitor your crops closely."
+        else:
+            why_message = "Price dropping or weather risk detected. Consider selling soon."
         
         st.markdown(f"""
-        <div style="background-color: {decision_color}; padding: 25px; border-radius: 15px; margin: 15px 0; text-align: center;">
-            <h1 style="color: white; margin: 0;">{action_level} {decision_text}</h1>
-            <p style="color: white; font-size: 18px; margin: 10px 0;">💰 {money_impact}</p>
+        <div style="background-color: {decision_color}; padding: 30px; border-radius: 15px; margin: 15px 0; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+            <h1 style="color: white; margin: 0; font-size: 36px;">{action_level} {decision_text}</h1>
+            <p style="color: white; font-size: 20px; margin: 15px 0;">💰 {money_impact}</p>
+        </div>
+        
+        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 10px; margin: 10px 0; border-left: 4px solid #28a745;">
+            <p style="margin: 0; color: #495057;"><strong>📋 Why:</strong> {why_message}</p>
+        </div>
+        
+        <div style="background-color: #e8f5e9; padding: 10px; border-radius: 8px; margin: 10px 0; text-align: center;">
+            <p style="margin: 0; color: #2e7d32;">✅ No immediate action needed today - Keep monitoring your farm</p>
         </div>
         """, unsafe_allow_html=True)
         
