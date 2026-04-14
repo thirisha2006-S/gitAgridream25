@@ -2272,24 +2272,164 @@ elif menu == get_text("menu_price", global_lang):
         st.info("Select a crop to see best market suggestion from eNAM")
 
 # ---------------------------
-# Weather
+# Weather with Smart Advisory
 # ---------------------------
 elif menu == get_text("menu_weather", global_lang):
     st.subheader("🌤️ " + get_text("live_weather", global_lang))
+    
+    # Crop selection for personalized advice
+    st.markdown("### 🌾 Select Your Crop (for personalized advice)")
+    crop_options = ["General", "Rice", "Wheat", "Tomato", "Potato", "Cotton", "Sugarcane", "Maize", "Onion", "Grapes"]
+    selected_crop = st.selectbox("Crop:", crop_options, index=0)
+    
     city = st.text_input(get_text("enter_city", global_lang), "Delhi")
 
     if st.button(get_text("get_weather", global_lang)):
         weather, error = get_weather(city)
         if weather:
-            st.write(f"### {get_text('current_weather', global_lang)} {city}")
-            col1, col2, col3 = st.columns(3)
+            temp = weather.get('temperature', 0)
+            humidity = weather.get('humidity', 0)
+            rainfall = weather.get('rainfall', 0)
+            description = weather.get('description', '').lower()
+            
+            # === 1. Weather Display ===
+            st.write(f"### 🌤️ Weather – {city}")
+            col1, col2, col3, col4 = st.columns(4)
             with col1:
-                st.metric(get_text("temperature", global_lang), f"{weather['temperature']}°C")
+                st.metric("🌡️ Temperature", f"{temp}°C")
             with col2:
-                st.metric(get_text("humidity", global_lang), f"{weather['humidity']}%")
+                st.metric("💧 Humidity", f"{humidity}%")
             with col3:
-                st.metric(get_text("rainfall", global_lang), f"{weather['rainfall']} mm")
-            st.write(f"**{get_text('condition', global_lang)}:** {weather['description'].title()}")
+                st.metric("🌧️ Rainfall", f"{rainfall} mm")
+            with col4:
+                st.metric("☁️ Condition", description.title())
+            
+            # === 2. Weather Risk Level ===
+            # Calculate risk based on conditions
+            risk_level = "LOW"
+            risk_color = "#28a745"
+            risk_desc = ""
+            
+            # High risk conditions
+            if temp > 40:
+                risk_level = "HIGH"
+                risk_color = "#dc3545"
+                risk_desc = "Extreme heat stress for crops"
+            elif humidity > 85 and temp > 25:
+                risk_level = "HIGH"
+                risk_color = "#dc3545"
+                risk_desc = "High humidity + warm temperature - very high risk of fungal diseases"
+            elif temp > 35 and humidity > 70:
+                risk_level = "MEDIUM"
+                risk_color = "#ffc107"
+                risk_desc = "Warm and humid - monitor for disease risk"
+            elif rainfall > 20:
+                risk_level = "MEDIUM"
+                risk_color = "#ffc107"
+                risk_desc = "Heavy rain may cause waterlogging"
+            elif temp < 5:
+                risk_level = "HIGH"
+                risk_color = "#dc3545"
+                risk_desc = "Cold stress - protect sensitive crops"
+            else:
+                risk_level = "LOW"
+                risk_color = "#28a745"
+                risk_desc = "Normal conditions - no immediate risk"
+            
+            st.markdown(f"""
+            <div style="background-color: #f8f9fa; padding: 15px; border-radius: 10px; margin: 10px 0; border-left: 5px solid {risk_color};">
+                <h4 style="color: {risk_color}; margin: 0;">🚨 Weather Risk Level: {risk_level}</h4>
+                <p style="color: #666; margin: 5px 0;">{risk_desc}</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # === 3. Actionable Advisory ===
+            st.markdown("### 🌿 Actionable Advisory")
+            
+            # Generate advice based on weather + crop
+            advisories = []
+            
+            # Rain advisory
+            if rainfall > 5:
+                advisories.append("🌧️ <b>Avoid irrigation today</b> - Soil moisture is sufficient")
+                advisories.append("🌧️ <b>Delay spraying pesticides/fertilizers</b> - Will be washed away")
+            elif rainfall == 0 and humidity < 40:
+                advisories.append("💧 <b>Increase irrigation</b> - Low humidity increases water needs")
+            
+            # Temperature advisory
+            if temp > 38:
+                advisories.append("☀️ <b>Water crops in early morning or evening</b> - Reduce evaporation")
+                advisories.append("☀️ <b>Provide shade for sensitive crops</b> - Heat stress risk")
+            elif temp < 10:
+                advisories.append("🥶 <b>Protect crops from cold</b> - Use covers for sensitive varieties")
+            
+            # Humidity advisory  
+            if humidity > 80:
+                advisories.append("🍄 <b>High risk of fungal diseases</b> - Monitor leaves closely")
+                advisories.append("🍄 <b>Avoid overhead irrigation</b> - Increases disease spread")
+            elif humidity < 30:
+                advisories.append("💨 <b>Low humidity</b> - May cause drying, increase watering")
+            
+            # Crop-specific advice
+            if selected_crop != "General":
+                if selected_crop in ["Rice"]:
+                    if rainfall > 10:
+                        advisories.append("🌾 <b>Rice:</b> Standing water is good - maintain paddy fields")
+                    elif rainfall < 5:
+                        advisories.append("🌾 <b>Rice:</b> May need supplemental irrigation")
+                elif selected_crop in ["Tomato", "Grapes"]:
+                    if humidity > 75:
+                        advisories.append("🍅 <b>{crop}:</b> High humidity increases risk of fungal diseases like Powdery Mildew".format(crop=selected_crop))
+                elif selected_crop in ["Cotton"]:
+                    if rainfall > 15:
+                        advisories.append("🌱 <b>Cotton:</b> Avoid cotton picking in wet conditions")
+                elif selected_crop in ["Onion", "Potato"]:
+                    if humidity > 80:
+                        advisories.append("🧅 <b>{crop}:</b> Risk of bulb rot - ensure good drainage".format(crop=selected_crop))
+            
+            # Display advisories
+            for advice in advisories:
+                st.markdown(f"<p style='margin: 5px 0;'>{advice}</p>", unsafe_allow_html=True)
+            
+            # === 4. Disease Risk Connection ===
+            if humidity > 70 and temp > 20:
+                st.markdown("### 🔗 Smart Insight: Disease Risk")
+                st.markdown("""
+                <div style="background: #fff3cd; padding: 15px; border-radius: 10px; margin: 10px 0;">
+                    <p style="margin: 8px 0;">🍄 <b>Weather conditions favor fungal diseases:</b></p>
+                    <ul style="margin: 5px 0; padding-left: 20px;">
+                        <li>Powdery Mildew (common in warm humid weather)</li>
+                        <li>Late Blight (favored by wet conditions)</li>
+                        <li>Leaf Spot diseases</li>
+                    </ul>
+                    <p style="margin: 8px 0;">💡 <b>Recommendation:</b> Consider preventive fungicide application if crop is in vulnerable stage.</p>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            # === 5. Price Impact Connection ===
+            if rainfall > 25:
+                st.markdown("### 📈 Smart Insight: Market Impact")
+                st.markdown("""
+                <div style="background: #e8f5e9; padding: 15px; border-radius: 10px; margin: 10px 0;">
+                    <p style="margin: 8px 0;">🌧️ <b>Heavy rain may affect market:</b></p>
+                    <ul style="margin: 5px 0; padding-left: 20px;">
+                        <li>Supply disruption - vegetables may become scarce</li>
+                        <li>Prices may increase in next 3-5 days</li>
+                        <li>Consider storing produce if possible</li>
+                    </ul>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            # === 6. Trust Layer ===
+            st.markdown("""
+            <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #6c757d;">
+                <p style="color: #6c757d; font-size: 12px; margin: 0;">
+                    <strong>⚠️ Note:</strong> Weather data from OpenWeatherMap API. Conditions may change rapidly. 
+                    For critical farming decisions, verify with local weather forecasts.
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+            
         else:
             st.error(get_text("unable_weather", global_lang))
             st.info(get_text("check_connection", global_lang))
@@ -2354,22 +2494,218 @@ elif menu == get_text("menu_disease", global_lang):
                                 </div>
                                 """, unsafe_allow_html=True)
                             else:
-                                # Disease detected
+                                # Check for low confidence - might be unclear image
                                 confidence_pct = int(top_result['confidence'] * 100)
-                                conf_color = "#28a745" if confidence_pct >= 80 else "#ffc107" if confidence_pct >= 60 else "#dc3545"
+                                
+                                # === Failure Handling for unclear images ===
+                                if confidence_pct < 50:
+                                    st.warning("⚠️ Unable to detect disease clearly. The uploaded image may be:")
+                                    st.write("• Too blurry or out of focus")
+                                    st.write("• Not showing clear disease symptoms")
+                                    st.write("• Insufficient lighting or poor image quality")
+                                    st.info("💡 Please upload a clearer image focusing on the affected area with good lighting.")
+                                    
+                                    # Still show what we can determine
+                                    st.markdown(f"**🌱 Plant:** {top_result['plant']}")
+                                    st.markdown(f"**🦠 Possible Condition:** {top_result['disease']} (low confidence)")
+                                    
+                                    # Continue with minimal info but reduced confidence display
+                                    conf_color = "#dc3545"
+                                    st.markdown(f"""
+                                    <div style="background-color: #f8f9fa; padding: 15px; border-radius: 10px; margin: 10px 0;">
+                                        <h4 style="color: #666; margin: 0;">🎯 Detection Confidence</h4>
+                                        <h2 style="color: {conf_color}; margin: 5px 0;">{confidence_pct}% <span style="font-size: 16px; color: {conf_color};">(UNCERTAIN)</span></h2>
+                                        <p style="color: #666; font-size: 14px; margin: 5px 0;">Unclear image - please retake with better quality</p>
+                                    </div>
+                                    """, unsafe_allow_html=True)
+                                    
+                                    # Show treatment but note uncertainty
+                                    st.markdown("### 💊 Suggested Treatment (verify with expert)")
+                                    st.info(top_result['treatment'])
+                                    
+                                    # Trust Layer with extra caution
+                                    st.markdown("""
+                                    <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #dc3545;">
+                                        <p style="color: #dc3545; font-size: 12px; margin: 0;">
+                                            <strong>⚠️ Warning:</strong> Low detection confidence. Please consult agricultural expert 
+                                            for accurate diagnosis before applying treatment.
+                                        </p>
+                                    </div>
+                                    """, unsafe_allow_html=True)
+                                else:
+                                    # Normal detection with sufficient confidence - already have confidence_pct from above
+                                    pass
+                                
+                                # === 1. Confidence with explanation and color badge ===
+                                if confidence_pct >= 80:
+                                    conf_level = "HIGH"
+                                    conf_color = "#28a745"
+                                    conf_explanation = "Clear disease patterns detected in image with strong model certainty"
+                                elif confidence_pct >= 60:
+                                    conf_level = "MEDIUM"
+                                    conf_color = "#ffc107"
+                                    conf_explanation = "Disease symptoms detected but image may be unclear - consider verification"
+                                else:
+                                    conf_level = "LOW"
+                                    conf_color = "#dc3545"
+                                    conf_explanation = "Unclear image or mixed symptoms detected - expert consultation recommended"
+                                
                                 st.markdown(f"""
                                 <div style="background-color: #f8f9fa; padding: 15px; border-radius: 10px; margin: 10px 0;">
                                     <h4 style="color: #666; margin: 0;">🎯 Detection Confidence</h4>
-                                    <h2 style="color: {conf_color}; margin: 5px 0;">{confidence_pct}%</h2>
+                                    <h2 style="color: {conf_color}; margin: 5px 0;">{confidence_pct}% <span style="font-size: 16px; color: {conf_color};">({conf_level})</span></h2>
+                                    <p style="color: #666; font-size: 14px; margin: 5px 0;">{conf_explanation}</p>
                                     <div style="background-color: #e9ecef; border-radius: 5px; height: 20px; width: 100%;">
                                         <div style="background-color: {conf_color}; border-radius: 5px; height: 100%; width: {confidence_pct}%;"></div>
                                     </div>
                                 </div>
                                 """, unsafe_allow_html=True)
                                 
-                                # Treatment
+                                # === 2. Severity Estimation ===
+                                # Simple logic based on confidence - higher confidence = more severe indication
+                                if confidence_pct >= 85:
+                                    severity = "SEVERE"
+                                    severity_color = "#dc3545"
+                                    severity_desc = "Disease appears well-established across multiple areas of the plant."
+                                elif confidence_pct >= 70:
+                                    severity = "MODERATE"
+                                    severity_color = "#ffc107"
+                                    severity_desc = "Disease is visible on several leaves - treatment needed soon."
+                                else:
+                                    severity = "MILD"
+                                    severity_color = "#17a2b8"
+                                    severity_desc = "Early signs on few leaves - quick treatment can prevent spread."
+                                
+                                st.markdown(f"""
+                                <div style="background-color: #fff3cd; padding: 12px; border-radius: 10px; margin: 10px 0; border-left: 4px solid {severity_color};">
+                                    <h4 style="color: {severity_color}; margin: 0;">⚠️ Severity: {severity}</h4>
+                                    <p style="color: #666; font-size: 14px; margin: 5px 0;">{severity_desc}</p>
+                                </div>
+                                """, unsafe_allow_html=True)
+                                
+                                # === 3. Spread Risk (NEW) ===
+                                # Higher severity + certain diseases = higher spread risk
+                                disease_name = top_result.get('disease', '').lower()
+                                high_spread_diseases = ['blight', 'mildew', 'rust', 'spot', 'rot']
+                                has_high_spread_disease = any(d in disease_name for d in high_spread_diseases)
+                                
+                                if severity == "SEVERE" and has_high_spread_disease:
+                                    spread_risk = "HIGH"
+                                    spread_color = "#dc3545"
+                                    spread_desc = "This disease can spread rapidly to other plants. Isolate if possible."
+                                elif severity == "MODERATE":
+                                    spread_risk = "MEDIUM"
+                                    spread_color = "#ffc107"
+                                    spread_desc = "Monitor nearby plants for symptoms. Treat soon to prevent spread."
+                                else:
+                                    spread_risk = "LOW"
+                                    spread_color = "#28a745"
+                                    spread_desc = "Low risk of spreading to nearby plants if treated promptly."
+                                
+                                st.markdown(f"""
+                                <div style="background-color: #f8f9fa; padding: 12px; border-radius: 10px; margin: 10px 0; border-left: 4px solid {spread_color};">
+                                    <h4 style="color: {spread_color}; margin: 0;">🔄 Spread Risk: {spread_risk}</h4>
+                                    <p style="color: #666; font-size: 14px; margin: 5px 0;">{spread_desc}</p>
+                                </div>
+                                """, unsafe_allow_html=True)
+                                
+                                # === 4. Urgency Level with Logic Explanation ===
+                                if confidence_pct >= 80:
+                                    urgency = "HIGH"
+                                    urgency_icon = "🚨"
+                                    urgency_color = "#dc3545"
+                                    urgency_action = "ACT IMMEDIATELY - Disease can spread rapidly to entire crop"
+                                    urgency_reason = "Based on: High severity + high spread risk disease"
+                                elif confidence_pct >= 60:
+                                    urgency = "MEDIUM"
+                                    urgency_icon = "⚡"
+                                    urgency_color = "#ffc107"
+                                    urgency_action = "Treat within 2-3 days to prevent spread"
+                                    urgency_reason = "Based on: Moderate severity with manageable spread risk"
+                                else:
+                                    urgency = "LOW"
+                                    urgency_icon = "📊"
+                                    urgency_color = "#17a2b8"
+                                    urgency_action = "Monitor and verify before taking action"
+                                    urgency_reason = "Based on: Mild symptoms - verify diagnosis first"
+                                
+                                st.markdown(f"""
+                                <div style="background-color: #f8f9fa; padding: 12px; border-radius: 10px; margin: 10px 0; border: 2px solid {urgency_color};">
+                                    <h4 style="color: {urgency_color}; margin: 0;">{urgency_icon} Urgency: {urgency}</h4>
+                                    <p style="color: #666; font-size: 14px; margin: 5px 0;">{urgency_action}</p>
+                                    <p style="color: #999; font-size: 12px; margin: 5px 0;"><em>{urgency_reason}</em></p>
+                                </div>
+                                """, unsafe_allow_html=True)
+                                
+                                # === 4. Structured Treatment ===
+                                treatment_text = top_result.get('treatment', 'Consult agricultural expert')
                                 st.markdown("### 💊 Recommended Treatment")
-                                st.info(top_result['treatment'])
+                                
+                                # Parse/generate structured treatment
+                                st.markdown(f"""
+                                <div style="display: flex; gap: 10px; margin: 10px 0;">
+                                    <div style="flex: 1; background: #e7f3ff; padding: 10px; border-radius: 8px;">
+                                        <h5 style="color: #0066cc; margin: 0;">🧪 Chemical Solution</h5>
+                                        <p style="font-size: 13px;">{treatment_text}</p>
+                                    </div>
+                                    <div style="flex: 1; background: #e8f5e9; padding: 10px; border-radius: 8px;">
+                                        <h5 style="color: #2e7d32; margin: 0;">🌿 Organic Solution</h5>
+                                        <p style="font-size: 13px;">Apply neem oil spray or copper-based organic fungicide. Remove infected leaves. Improve air circulation.</p>
+                                    </div>
+                                </div>
+                                """, unsafe_allow_html=True)
+                                
+                                st.markdown("""
+                                <div style="background: #fff3e0; padding: 10px; border-radius: 8px; margin: 10px 0;">
+                                    <h5 style="color: #e65100; margin: 0;">🛡️ Prevention Tips</h5>
+                                    <ul style="margin: 5px 0; padding-left: 20px; font-size: 13px;">
+                                        <li>Rotate crops annually to prevent disease buildup</li>
+                                        <li>Use disease-resistant varieties when possible</li>
+                                        <li>Remove and destroy infected plant parts</li>
+                                        <li>Avoid overhead watering - water at soil level</li>
+                                        <li>Maintain proper plant spacing for air circulation</li>
+                                    </ul>
+                                </div>
+                                """, unsafe_allow_html=True)
+                                
+                                # === 5. Ecosystem Connection - Disease Impact ===
+                                st.markdown("### 🌾 Ecosystem Impact")
+                                
+                                crop_name = top_result.get('plant', 'Crop')
+                                disease_name = top_result.get('disease', 'Disease')
+                                
+                                # Estimate impact based on severity
+                                if severity == "SEVERE":
+                                    yield_impact = "Estimated 30-50% yield reduction possible (based on typical disease impact patterns)"
+                                    price_impact = "Quality drop may reduce market value (estimated 20-40% reduction based on typical disease impact)"
+                                    recommendation = "Consider harvesting early if crop is near maturity to minimize loss"
+                                elif severity == "MODERATE":
+                                    yield_impact = "Estimated 10-25% yield reduction possible (depends on treatment timing and crop health)"
+                                    price_impact = "Minor quality impact on market price (may affect grade but generally recoverable)"
+                                    recommendation = "Treat immediately and monitor for 7 days"
+                                else:
+                                    yield_impact = "Estimated 5-10% yield impact if left untreated (minimal if treated promptly)"
+                                    price_impact = "Minimal impact expected if treated promptly and properly"
+                                    recommendation = "Apply treatment and recheck in 1 week"
+                                
+                                st.markdown(f"""
+                                <div style="background: #fce4ec; padding: 15px; border-radius: 10px; margin: 10px 0;">
+                                    <h5 style="color: #c2185b; margin: 0;">📉 Yield & Price Impact</h5>
+                                    <p style="margin: 8px 0;"><strong>🌾 Yield:</strong> {yield_impact}</p>
+                                    <p style="margin: 8px 0;"><strong>💰 Market:</strong> {price_impact}</p>
+                                    <p style="margin: 8px 0;"><strong>💡 Advisory:</strong> {recommendation}</p>
+                                </div>
+                                """, unsafe_allow_html=True)
+                                
+                                # === 6. Trust Layer - Disclaimer ===
+                                st.markdown("""
+                                <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #6c757d;">
+                                    <p style="color: #6c757d; font-size: 12px; margin: 0;">
+                                        <strong>⚠️ Disclaimer:</strong> This AI-based detection is for preliminary guidance only. 
+                                        For severe cases or uncertain diagnoses, please consult your local agricultural extension office or a qualified plant pathologist.
+                                    </p>
+                                </div>
+                                """, unsafe_allow_html=True)
                             
                             # Show other possibilities
                             if len(predictions) > 1:
@@ -2395,10 +2731,141 @@ elif menu == get_text("menu_disease", global_lang):
                             
                             st.markdown("---")
                             st.markdown("### 📊 Demo Results (Install TensorFlow for real detection)")
+                            
+                            # === Enhanced Demo Results ===
+                            confidence_pct = int(result['probability'] * 100)
+                            
+                            # 1. Confidence with level
+                            if confidence_pct >= 80:
+                                conf_level = "HIGH"
+                                conf_color = "#28a745"
+                                conf_explanation = "Clear disease patterns detected in image with strong model certainty"
+                            elif confidence_pct >= 60:
+                                conf_level = "MEDIUM"
+                                conf_color = "#ffc107"
+                                conf_explanation = "Disease symptoms detected but image may be unclear - consider verification"
+                            else:
+                                conf_level = "LOW"
+                                conf_color = "#dc3545"
+                                conf_explanation = "Unclear image or mixed symptoms detected - expert consultation recommended"
+                            
                             st.markdown(f"**🌱 Plant:** Tomato")
                             st.markdown(f"**🦠 Disease Detected:** {result['name']}")
-                            confidence_pct = int(result['probability'] * 100)
-                            st.info(f"Treatment: {result['treatment']}")
+                            
+                            st.markdown(f"""
+                            <div style="background-color: #f8f9fa; padding: 15px; border-radius: 10px; margin: 10px 0;">
+                                <h4 style="color: #666; margin: 0;">🎯 Detection Confidence</h4>
+                                <h2 style="color: {conf_color}; margin: 5px 0;">{confidence_pct}% <span style="font-size: 16px; color: {conf_color};">({conf_level})</span></h2>
+                                <p style="color: #666; font-size: 14px; margin: 5px 0;">{conf_explanation}</p>
+                            </div>
+                            """, unsafe_allow_html=True)
+                            
+                            # 2. Severity
+                            if confidence_pct >= 85:
+                                severity = "SEVERE"
+                                severity_color = "#dc3545"
+                                severity_desc = "Disease appears well-established. Immediate action recommended."
+                            elif confidence_pct >= 70:
+                                severity = "MODERATE"
+                                severity_color = "#ffc107"
+                                severity_desc = "Disease is spreading. Monitor closely and treat soon."
+                            else:
+                                severity = "MILD"
+                                severity_color = "#17a2b8"
+                                severity_desc = "Early signs detected. Quick treatment can prevent spread."
+                            
+                            st.markdown(f"""
+                            <div style="background-color: #fff3cd; padding: 12px; border-radius: 10px; margin: 10px 0; border-left: 4px solid {severity_color};">
+                                <h4 style="color: {severity_color}; margin: 0;">⚠️ Severity: {severity}</h4>
+                                <p style="color: #666; font-size: 14px; margin: 5px 0;">{severity_desc}</p>
+                            </div>
+                            """, unsafe_allow_html=True)
+                            
+                            # 3. Urgency
+                            if confidence_pct >= 80:
+                                urgency = "HIGH"
+                                urgency_icon = "🚨"
+                                urgency_color = "#dc3545"
+                                urgency_action = "ACT IMMEDIATELY - Disease can spread rapidly"
+                            elif confidence_pct >= 60:
+                                urgency = "MEDIUM"
+                                urgency_icon = "⚡"
+                                urgency_color = "#ffc107"
+                                urgency_action = "Treat within 2-3 days to prevent spread"
+                            else:
+                                urgency = "LOW"
+                                urgency_icon = "📊"
+                                urgency_color = "#17a2b8"
+                                urgency_action = "Monitor and verify before taking action"
+                            
+                            st.markdown(f"""
+                            <div style="background-color: #f8f9fa; padding: 12px; border-radius: 10px; margin: 10px 0; border: 2px solid {urgency_color};">
+                                <h4 style="color: {urgency_color}; margin: 0;">{urgency_icon} Urgency: {urgency}</h4>
+                                <p style="color: #666; font-size: 14px; margin: 5px 0;">{urgency_action}</p>
+                            </div>
+                            """, unsafe_allow_html=True)
+                            
+                            # 4. Structured Treatment
+                            st.markdown("### 💊 Recommended Treatment")
+                            treatment_text = result['treatment']
+                            
+                            st.markdown(f"""
+                            <div style="display: flex; gap: 10px; margin: 10px 0;">
+                                <div style="flex: 1; background: #e7f3ff; padding: 10px; border-radius: 8px;">
+                                    <h5 style="color: #0066cc; margin: 0;">🧪 Chemical Solution</h5>
+                                    <p style="font-size: 13px;">{treatment_text}</p>
+                                </div>
+                                <div style="flex: 1; background: #e8f5e9; padding: 10px; border-radius: 8px;">
+                                    <h5 style="color: #2e7d32; margin: 0;">🌿 Organic Solution</h5>
+                                    <p style="font-size: 13px;">Apply neem oil spray or copper-based organic fungicide. Remove infected leaves. Improve air circulation.</p>
+                                </div>
+                            </div>
+                            """, unsafe_allow_html=True)
+                            
+                            st.markdown("""
+                            <div style="background: #fff3e0; padding: 10px; border-radius: 8px; margin: 10px 0;">
+                                <h5 style="color: #e65100; margin: 0;">🛡️ Prevention Tips</h5>
+                                <ul style="margin: 5px 0; padding-left: 20px; font-size: 13px;">
+                                    <li>Rotate crops annually to prevent disease buildup</li>
+                                    <li>Use disease-resistant varieties when possible</li>
+                                    <li>Remove and destroy infected plant parts</li>
+                                    <li>Avoid overhead watering - water at soil level</li>
+                                </ul>
+                            </div>
+                            """, unsafe_allow_html=True)
+                            
+                            # 5. Ecosystem Impact
+                            if severity == "SEVERE":
+                                yield_impact = "Estimated 30-50% yield reduction possible (based on typical disease impact patterns)"
+                                price_impact = "Quality drop may reduce market value (estimated 20-40% reduction based on typical disease impact)"
+                                recommendation = "Consider harvesting early if crop is near maturity to minimize loss"
+                            elif severity == "MODERATE":
+                                yield_impact = "Estimated 10-25% yield reduction possible (depends on treatment timing and crop health)"
+                                price_impact = "Minor quality impact on market price (may affect grade but generally recoverable)"
+                                recommendation = "Treat immediately and monitor for 7 days"
+                            else:
+                                yield_impact = "Estimated 5-10% yield impact if left untreated (minimal if treated promptly)"
+                                price_impact = "Minimal impact expected if treated promptly and properly"
+                                recommendation = "Apply treatment and recheck in 1 week"
+                            
+                            st.markdown("### 🌾 Ecosystem Impact")
+                            st.markdown(f"""
+                            <div style="background: #fce4ec; padding: 15px; border-radius: 10px; margin: 10px 0;">
+                                <h5 style="color: #c2185b; margin: 0;">📉 Yield & Price Impact</h5>
+                                <p style="margin: 8px 0;"><strong>🌾 Yield:</strong> {yield_impact}</p>
+                                <p style="margin: 8px 0;"><strong>💰 Market:</strong> {price_impact}</p>
+                                <p style="margin: 8px 0;"><strong>💡 Advisory:</strong> {recommendation}</p>
+                            </div>
+                            """, unsafe_allow_html=True)
+                            
+                            # 6. Trust Layer
+                            st.markdown("""
+                            <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #6c757d;">
+                                <p style="color: #6c757d; font-size: 12px; margin: 0;">
+                                    <strong>⚠️ Disclaimer:</strong> This is demo mode. Install TensorFlow for real detection accuracy.
+                                </p>
+                            </div>
+                            """, unsafe_allow_html=True)
                     
                     elif "Pl@ntNet" in api_option:
                         # Pl@ntNet API
@@ -2423,22 +2890,139 @@ elif menu == get_text("menu_disease", global_lang):
                             st.markdown("### 📊 Demo Detection Results")
                             st.markdown(f"**🌱 Plant:** Tomato")
                             
+                            # === Enhanced Demo Results ===
                             confidence_pct = int(result['probability'] * 100)
+                            
+                            # 1. Confidence with level
+                            if confidence_pct >= 80:
+                                conf_level = "HIGH"
+                                conf_color = "#28a745"
+                                conf_explanation = "Clear disease patterns detected in image with strong model certainty"
+                            elif confidence_pct >= 60:
+                                conf_level = "MEDIUM"
+                                conf_color = "#ffc107"
+                                conf_explanation = "Disease symptoms detected but image may be unclear - consider verification"
+                            else:
+                                conf_level = "LOW"
+                                conf_color = "#dc3545"
+                                conf_explanation = "Unclear image or mixed symptoms detected - expert consultation recommended"
+                            
                             st.markdown(f"**🦠 Disease Detected:** {result['name']}")
                             
-                            conf_color = "#28a745" if confidence_pct >= 80 else "#ffc107" if confidence_pct >= 60 else "#dc3545"
                             st.markdown(f"""
                             <div style="background-color: #f8f9fa; padding: 15px; border-radius: 10px; margin: 10px 0;">
-                                <h4 style="color: #666; margin: 0;">🎯 Detection Accuracy</h4>
-                                <h2 style="color: {conf_color}; margin: 5px 0;">{confidence_pct}%</h2>
-                                <div style="background-color: #e9ecef; border-radius: 5px; height: 20px; width: 100%;">
-                                    <div style="background-color: {conf_color}; border-radius: 5px; height: 100%; width: {confidence_pct}%;"></div>
+                                <h4 style="color: #666; margin: 0;">🎯 Detection Confidence</h4>
+                                <h2 style="color: {conf_color}; margin: 5px 0;">{confidence_pct}% <span style="font-size: 16px; color: {conf_color};">({conf_level})</span></h2>
+                                <p style="color: #666; font-size: 14px; margin: 5px 0;">{conf_explanation}</p>
+                            </div>
+                            """, unsafe_allow_html=True)
+                            
+                            # 2. Severity
+                            if confidence_pct >= 85:
+                                severity = "SEVERE"
+                                severity_color = "#dc3545"
+                                severity_desc = "Disease appears well-established. Immediate action recommended."
+                            elif confidence_pct >= 70:
+                                severity = "MODERATE"
+                                severity_color = "#ffc107"
+                                severity_desc = "Disease is spreading. Monitor closely and treat soon."
+                            else:
+                                severity = "MILD"
+                                severity_color = "#17a2b8"
+                                severity_desc = "Early signs detected. Quick treatment can prevent spread."
+                            
+                            st.markdown(f"""
+                            <div style="background-color: #fff3cd; padding: 12px; border-radius: 10px; margin: 10px 0; border-left: 4px solid {severity_color};">
+                                <h4 style="color: {severity_color}; margin: 0;">⚠️ Severity: {severity}</h4>
+                                <p style="color: #666; font-size: 14px; margin: 5px 0;">{severity_desc}</p>
+                            </div>
+                            """, unsafe_allow_html=True)
+                            
+                            # 3. Urgency
+                            if confidence_pct >= 80:
+                                urgency = "HIGH"
+                                urgency_icon = "🚨"
+                                urgency_color = "#dc3545"
+                                urgency_action = "ACT IMMEDIATELY - Disease can spread rapidly"
+                            elif confidence_pct >= 60:
+                                urgency = "MEDIUM"
+                                urgency_icon = "⚡"
+                                urgency_color = "#ffc107"
+                                urgency_action = "Treat within 2-3 days to prevent spread"
+                            else:
+                                urgency = "LOW"
+                                urgency_icon = "📊"
+                                urgency_color = "#17a2b8"
+                                urgency_action = "Monitor and verify before taking action"
+                            
+                            st.markdown(f"""
+                            <div style="background-color: #f8f9fa; padding: 12px; border-radius: 10px; margin: 10px 0; border: 2px solid {urgency_color};">
+                                <h4 style="color: {urgency_color}; margin: 0;">{urgency_icon} Urgency: {urgency}</h4>
+                                <p style="color: #666; font-size: 14px; margin: 5px 0;">{urgency_action}</p>
+                            </div>
+                            """, unsafe_allow_html=True)
+                            
+                            # 4. Structured Treatment
+                            treatment_text = result['treatment']
+                            st.markdown("### 💊 Recommended Treatment")
+                            
+                            st.markdown(f"""
+                            <div style="display: flex; gap: 10px; margin: 10px 0;">
+                                <div style="flex: 1; background: #e7f3ff; padding: 10px; border-radius: 8px;">
+                                    <h5 style="color: #0066cc; margin: 0;">🧪 Chemical Solution</h5>
+                                    <p style="font-size: 13px;">{treatment_text}</p>
+                                </div>
+                                <div style="flex: 1; background: #e8f5e9; padding: 10px; border-radius: 8px;">
+                                    <h5 style="color: #2e7d32; margin: 0;">🌿 Organic Solution</h5>
+                                    <p style="font-size: 13px;">Apply neem oil spray or copper-based organic fungicide. Remove infected leaves. Improve air circulation.</p>
                                 </div>
                             </div>
                             """, unsafe_allow_html=True)
                             
-                            st.markdown("### 💊 Recommended Treatment")
-                            st.info(result['treatment'])
+                            st.markdown("""
+                            <div style="background: #fff3e0; padding: 10px; border-radius: 8px; margin: 10px 0;">
+                                <h5 style="color: #e65100; margin: 0;">🛡️ Prevention Tips</h5>
+                                <ul style="margin: 5px 0; padding-left: 20px; font-size: 13px;">
+                                    <li>Rotate crops annually to prevent disease buildup</li>
+                                    <li>Use disease-resistant varieties when possible</li>
+                                    <li>Remove and destroy infected plant parts</li>
+                                    <li>Avoid overhead watering - water at soil level</li>
+                                </ul>
+                            </div>
+                            """, unsafe_allow_html=True)
+                            
+                            # 5. Ecosystem Impact
+                            if severity == "SEVERE":
+                                yield_impact = "Estimated 30-50% yield reduction possible (based on typical disease impact patterns)"
+                                price_impact = "Quality drop may reduce market value (estimated 20-40% reduction based on typical disease impact)"
+                                recommendation = "Consider harvesting early if crop is near maturity to minimize loss"
+                            elif severity == "MODERATE":
+                                yield_impact = "Estimated 10-25% yield reduction possible (depends on treatment timing and crop health)"
+                                price_impact = "Minor quality impact on market price (may affect grade but generally recoverable)"
+                                recommendation = "Treat immediately and monitor for 7 days"
+                            else:
+                                yield_impact = "Estimated 5-10% yield impact if left untreated (minimal if treated promptly)"
+                                price_impact = "Minimal impact expected if treated promptly and properly"
+                                recommendation = "Apply treatment and recheck in 1 week"
+                            
+                            st.markdown("### 🌾 Ecosystem Impact")
+                            st.markdown(f"""
+                            <div style="background: #fce4ec; padding: 15px; border-radius: 10px; margin: 10px 0;">
+                                <h5 style="color: #c2185b; margin: 0;">📉 Yield & Price Impact</h5>
+                                <p style="margin: 8px 0;"><strong>🌾 Yield:</strong> {yield_impact}</p>
+                                <p style="margin: 8px 0;"><strong>💰 Market:</strong> {price_impact}</p>
+                                <p style="margin: 8px 0;"><strong>💡 Advisory:</strong> {recommendation}</p>
+                            </div>
+                            """, unsafe_allow_html=True)
+                            
+                            # 6. Trust Layer
+                            st.markdown("""
+                            <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #6c757d;">
+                                <p style="color: #6c757d; font-size: 12px; margin: 0;">
+                                    <strong>⚠️ Disclaimer:</strong> This is demo mode. Get a free API key for real detection.
+                                </p>
+                            </div>
+                            """, unsafe_allow_html=True)
                             
                             st.warning("⚠️ Demo mode - Get a free API key for real detection:")
                             st.info("1. Go to https://my.plantnet.org/signup")
@@ -2584,24 +3168,141 @@ elif menu == get_text("menu_disease", global_lang):
                             
                             st.markdown("---")
                             st.markdown("### 📊 Detection Results")
-                            st.markdown(f"**🌱 Plant:** Tomato")
                             
+                            # === Enhanced Demo Results ===
                             confidence_pct = int(result['probability'] * 100)
+                            
+                            # 1. Confidence with level
+                            if confidence_pct >= 80:
+                                conf_level = "HIGH"
+                                conf_color = "#28a745"
+                                conf_explanation = "Clear disease patterns detected in image with strong model certainty"
+                            elif confidence_pct >= 60:
+                                conf_level = "MEDIUM"
+                                conf_color = "#ffc107"
+                                conf_explanation = "Disease symptoms detected but image may be unclear - consider verification"
+                            else:
+                                conf_level = "LOW"
+                                conf_color = "#dc3545"
+                                conf_explanation = "Unclear image or mixed symptoms detected - expert consultation recommended"
+                            
+                            st.markdown(f"**🌱 Plant:** Tomato")
                             st.markdown(f"**🦠 Disease Detected:** {result['name']}")
                             
-                            conf_color = "#28a745" if confidence_pct >= 80 else "#ffc107" if confidence_pct >= 60 else "#dc3545"
                             st.markdown(f"""
                             <div style="background-color: #f8f9fa; padding: 15px; border-radius: 10px; margin: 10px 0;">
-                                <h4 style="color: #666; margin: 0;">🎯 Detection Accuracy</h4>
-                                <h2 style="color: {conf_color}; margin: 5px 0;">{confidence_pct}%</h2>
-                                <div style="background-color: #e9ecef; border-radius: 5px; height: 20px; width: 100%;">
-                                    <div style="background-color: {conf_color}; border-radius: 5px; height: 100%; width: {confidence_pct}%;"></div>
+                                <h4 style="color: #666; margin: 0;">🎯 Detection Confidence</h4>
+                                <h2 style="color: {conf_color}; margin: 5px 0;">{confidence_pct}% <span style="font-size: 16px; color: {conf_color};">({conf_level})</span></h2>
+                                <p style="color: #666; font-size: 14px; margin: 5px 0;">{conf_explanation}</p>
+                            </div>
+                            """, unsafe_allow_html=True)
+                            
+                            # 2. Severity
+                            if confidence_pct >= 85:
+                                severity = "SEVERE"
+                                severity_color = "#dc3545"
+                                severity_desc = "Disease appears well-established. Immediate action recommended."
+                            elif confidence_pct >= 70:
+                                severity = "MODERATE"
+                                severity_color = "#ffc107"
+                                severity_desc = "Disease is spreading. Monitor closely and treat soon."
+                            else:
+                                severity = "MILD"
+                                severity_color = "#17a2b8"
+                                severity_desc = "Early signs detected. Quick treatment can prevent spread."
+                            
+                            st.markdown(f"""
+                            <div style="background-color: #fff3cd; padding: 12px; border-radius: 10px; margin: 10px 0; border-left: 4px solid {severity_color};">
+                                <h4 style="color: {severity_color}; margin: 0;">⚠️ Severity: {severity}</h4>
+                                <p style="color: #666; font-size: 14px; margin: 5px 0;">{severity_desc}</p>
+                            </div>
+                            """, unsafe_allow_html=True)
+                            
+                            # 3. Urgency
+                            if confidence_pct >= 80:
+                                urgency = "HIGH"
+                                urgency_icon = "🚨"
+                                urgency_color = "#dc3545"
+                                urgency_action = "ACT IMMEDIATELY - Disease can spread rapidly"
+                            elif confidence_pct >= 60:
+                                urgency = "MEDIUM"
+                                urgency_icon = "⚡"
+                                urgency_color = "#ffc107"
+                                urgency_action = "Treat within 2-3 days to prevent spread"
+                            else:
+                                urgency = "LOW"
+                                urgency_icon = "📊"
+                                urgency_color = "#17a2b8"
+                                urgency_action = "Monitor and verify before taking action"
+                            
+                            st.markdown(f"""
+                            <div style="background-color: #f8f9fa; padding: 12px; border-radius: 10px; margin: 10px 0; border: 2px solid {urgency_color};">
+                                <h4 style="color: {urgency_color}; margin: 0;">{urgency_icon} Urgency: {urgency}</h4>
+                                <p style="color: #666; font-size: 14px; margin: 5px 0;">{urgency_action}</p>
+                            </div>
+                            """, unsafe_allow_html=True)
+                            
+                            # 4. Structured Treatment
+                            treatment_text = result['treatment']
+                            st.markdown("### 💊 Recommended Treatment")
+                            
+                            st.markdown(f"""
+                            <div style="display: flex; gap: 10px; margin: 10px 0;">
+                                <div style="flex: 1; background: #e7f3ff; padding: 10px; border-radius: 8px;">
+                                    <h5 style="color: #0066cc; margin: 0;">🧪 Chemical Solution</h5>
+                                    <p style="font-size: 13px;">{treatment_text}</p>
+                                </div>
+                                <div style="flex: 1; background: #e8f5e9; padding: 10px; border-radius: 8px;">
+                                    <h5 style="color: #2e7d32; margin: 0;">🌿 Organic Solution</h5>
+                                    <p style="font-size: 13px;">Apply neem oil spray or copper-based organic fungicide. Remove infected leaves. Improve air circulation.</p>
                                 </div>
                             </div>
                             """, unsafe_allow_html=True)
                             
-                            st.markdown("### 💊 Recommended Treatment")
-                            st.info(result['treatment'])
+                            st.markdown("""
+                            <div style="background: #fff3e0; padding: 10px; border-radius: 8px; margin: 10px 0;">
+                                <h5 style="color: #e65100; margin: 0;">🛡️ Prevention Tips</h5>
+                                <ul style="margin: 5px 0; padding-left: 20px; font-size: 13px;">
+                                    <li>Rotate crops annually to prevent disease buildup</li>
+                                    <li>Use disease-resistant varieties when possible</li>
+                                    <li>Remove and destroy infected plant parts</li>
+                                    <li>Avoid overhead watering - water at soil level</li>
+                                </ul>
+                            </div>
+                            """, unsafe_allow_html=True)
+                            
+                            # 5. Ecosystem Impact
+                            if severity == "SEVERE":
+                                yield_impact = "Estimated 30-50% yield reduction possible (based on typical disease impact patterns)"
+                                price_impact = "Quality drop may reduce market value (estimated 20-40% reduction based on typical disease impact)"
+                                recommendation = "Consider harvesting early if crop is near maturity to minimize loss"
+                            elif severity == "MODERATE":
+                                yield_impact = "Estimated 10-25% yield reduction possible (depends on treatment timing and crop health)"
+                                price_impact = "Minor quality impact on market price (may affect grade but generally recoverable)"
+                                recommendation = "Treat immediately and monitor for 7 days"
+                            else:
+                                yield_impact = "Estimated 5-10% yield impact if left untreated (minimal if treated promptly)"
+                                price_impact = "Minimal impact expected if treated promptly and properly"
+                                recommendation = "Apply treatment and recheck in 1 week"
+                            
+                            st.markdown("### 🌾 Ecosystem Impact")
+                            st.markdown(f"""
+                            <div style="background: #fce4ec; padding: 15px; border-radius: 10px; margin: 10px 0;">
+                                <h5 style="color: #c2185b; margin: 0;">📉 Yield & Price Impact</h5>
+                                <p style="margin: 8px 0;"><strong>🌾 Yield:</strong> {yield_impact}</p>
+                                <p style="margin: 8px 0;"><strong>💰 Market:</strong> {price_impact}</p>
+                                <p style="margin: 8px 0;"><strong>💡 Advisory:</strong> {recommendation}</p>
+                            </div>
+                            """, unsafe_allow_html=True)
+                            
+                            # 6. Trust Layer
+                            st.markdown("""
+                            <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #6c757d;">
+                                <p style="color: #6c757d; font-size: 12px; margin: 0;">
+                                    <strong>⚠️ Disclaimer:</strong> This is demo mode. Add API key for real detection.
+                                </p>
+                            </div>
+                            """, unsafe_allow_html=True)
                         else:
                             # Real Plant.id Health API call
                             import json
@@ -2656,15 +3357,73 @@ elif menu == get_text("menu_disease", global_lang):
                                         
                                         st.markdown(f"**🦠 Disease Detected:** {disease_name}")
                                         
+                                        # === Enhanced Display ===
                                         confidence_pct = int(disease_prob * 100)
-                                        conf_color = "#28a745" if confidence_pct >= 80 else "#ffc107" if confidence_pct >= 60 else "#dc3545"
+                                        
+                                        # 1. Confidence with level
+                                        if confidence_pct >= 80:
+                                            conf_level = "HIGH"
+                                            conf_color = "#28a745"
+                                            conf_explanation = "Clear disease patterns detected in image with strong model certainty"
+                                        elif confidence_pct >= 60:
+                                            conf_level = "MEDIUM"
+                                            conf_color = "#ffc107"
+                                            conf_explanation = "Disease symptoms detected but image may be unclear - consider verification"
+                                        else:
+                                            conf_level = "LOW"
+                                            conf_color = "#dc3545"
+                                            conf_explanation = "Unclear image or mixed symptoms detected - expert consultation recommended"
+                                        
                                         st.markdown(f"""
                                         <div style="background-color: #f8f9fa; padding: 15px; border-radius: 10px; margin: 10px 0;">
-                                            <h4 style="color: #666; margin: 0;">🎯 Detection Accuracy</h4>
-                                            <h2 style="color: {conf_color}; margin: 5px 0;">{confidence_pct}%</h2>
-                                            <div style="background-color: #e9ecef; border-radius: 5px; height: 20px; width: 100%;">
-                                                <div style="background-color: {conf_color}; border-radius: 5px; height: 100%; width: {confidence_pct}%;"></div>
-                                            </div>
+                                            <h4 style="color: #666; margin: 0;">🎯 Detection Confidence</h4>
+                                            <h2 style="color: {conf_color}; margin: 5px 0;">{confidence_pct}% <span style="font-size: 16px; color: {conf_color};">({conf_level})</span></h2>
+                                            <p style="color: #666; font-size: 14px; margin: 5px 0;">{conf_explanation}</p>
+                                        </div>
+                                        """, unsafe_allow_html=True)
+                                        
+                                        # 2. Severity
+                                        if confidence_pct >= 85:
+                                            severity = "SEVERE"
+                                            severity_color = "#dc3545"
+                                            severity_desc = "Disease appears well-established. Immediate action recommended."
+                                        elif confidence_pct >= 70:
+                                            severity = "MODERATE"
+                                            severity_color = "#ffc107"
+                                            severity_desc = "Disease is spreading. Monitor closely and treat soon."
+                                        else:
+                                            severity = "MILD"
+                                            severity_color = "#17a2b8"
+                                            severity_desc = "Early signs detected. Quick treatment can prevent spread."
+                                        
+                                        st.markdown(f"""
+                                        <div style="background-color: #fff3cd; padding: 12px; border-radius: 10px; margin: 10px 0; border-left: 4px solid {severity_color};">
+                                            <h4 style="color: {severity_color}; margin: 0;">⚠️ Severity: {severity}</h4>
+                                            <p style="color: #666; font-size: 14px; margin: 5px 0;">{severity_desc}</p>
+                                        </div>
+                                        """, unsafe_allow_html=True)
+                                        
+                                        # 3. Urgency
+                                        if confidence_pct >= 80:
+                                            urgency = "HIGH"
+                                            urgency_icon = "🚨"
+                                            urgency_color = "#dc3545"
+                                            urgency_action = "ACT IMMEDIATELY - Disease can spread rapidly"
+                                        elif confidence_pct >= 60:
+                                            urgency = "MEDIUM"
+                                            urgency_icon = "⚡"
+                                            urgency_color = "#ffc107"
+                                            urgency_action = "Treat within 2-3 days to prevent spread"
+                                        else:
+                                            urgency = "LOW"
+                                            urgency_icon = "📊"
+                                            urgency_color = "#17a2b8"
+                                            urgency_action = "Monitor and verify before taking action"
+                                        
+                                        st.markdown(f"""
+                                        <div style="background-color: #f8f9fa; padding: 12px; border-radius: 10px; margin: 10px 0; border: 2px solid {urgency_color};">
+                                            <h4 style="color: {urgency_color}; margin: 0;">{urgency_icon} Urgency: {urgency}</h4>
+                                            <p style="color: #666; font-size: 14px; margin: 5px 0;">{urgency_action}</p>
                                         </div>
                                         """, unsafe_allow_html=True)
                                         
@@ -2679,18 +3438,72 @@ elif menu == get_text("menu_disease", global_lang):
                                             if treatment:
                                                 st.markdown("### 💊 Recommended Treatment")
                                                 
+                                                # Get treatment info
+                                                chemical = ""
                                                 prevention = treatment.get('prevention', [])
                                                 biological = treatment.get('biological', [])
                                                 
                                                 if prevention:
-                                                    st.markdown("**🛡️ Prevention:**")
+                                                    chemical = "Apply appropriate fungicide. " + " ".join(prevention[:2])
+                                                else:
+                                                    chemical = "Apply appropriate fungicide as recommended by agricultural expert."
+                                                
+                                                st.markdown(f"""
+                                                <div style="display: flex; gap: 10px; margin: 10px 0;">
+                                                    <div style="flex: 1; background: #e7f3ff; padding: 10px; border-radius: 8px;">
+                                                        <h5 style="color: #0066cc; margin: 0;">🧪 Chemical Solution</h5>
+                                                        <p style="font-size: 13px;">{chemical}</p>
+                                                    </div>
+                                                    <div style="flex: 1; background: #e8f5e9; padding: 10px; border-radius: 8px;">
+                                                        <h5 style="color: #2e7d32; margin: 0;">🌿 Organic Solution</h5>
+                                                        <p style="font-size: 13px;">{" ".join(biological[:2]) if biological else "Apply neem oil spray or copper-based organic fungicide. Remove infected leaves. Improve air circulation."}</p>
+                                                    </div>
+                                                </div>
+                                                """, unsafe_allow_html=True)
+                                                
+                                                if prevention:
+                                                    st.markdown("""
+                                                    <div style="background: #fff3e0; padding: 10px; border-radius: 8px; margin: 10px 0;">
+                                                        <h5 style="color: #e65100; margin: 0;">🛡️ Prevention Tips</h5>
+                                                        <ul style="margin: 5px 0; padding-left: 20px; font-size: 13px;">
+                                                        """, unsafe_allow_html=True)
                                                     for tip in prevention[:5]:
                                                         st.write(f"• {tip}")
-                                                
-                                                if biological:
-                                                    st.markdown("**🌿 Treatment:**")
-                                                    for tip in biological[:5]:
-                                                        st.write(f"• {tip}")
+                                                    st.markdown("</ul></div>", unsafe_allow_html=True)
+                                        
+                                        # 4. Ecosystem Impact
+                                        if severity == "SEVERE":
+                                            yield_impact = "Estimated 30-50% yield reduction possible (based on typical disease impact patterns)"
+                                            price_impact = "Quality drop may reduce market value (estimated 20-40% reduction based on typical disease impact)"
+                                            recommendation = "Consider harvesting early if crop is near maturity to minimize loss"
+                                        elif severity == "MODERATE":
+                                            yield_impact = "Estimated 10-25% yield reduction possible (depends on treatment timing and crop health)"
+                                            price_impact = "Minor quality impact on market price (may affect grade but generally recoverable)"
+                                            recommendation = "Treat immediately and monitor for 7 days"
+                                        else:
+                                            yield_impact = "Estimated 5-10% yield impact if left untreated (minimal if treated promptly)"
+                                            price_impact = "Minimal impact expected if treated promptly and properly"
+                                            recommendation = "Apply treatment and recheck in 1 week"
+                                        
+                                        st.markdown("### 🌾 Ecosystem Impact")
+                                        st.markdown(f"""
+                                        <div style="background: #fce4ec; padding: 15px; border-radius: 10px; margin: 10px 0;">
+                                            <h5 style="color: #c2185b; margin: 0;">📉 Yield & Price Impact</h5>
+                                            <p style="margin: 8px 0;"><strong>🌾 Yield:</strong> {yield_impact}</p>
+                                            <p style="margin: 8px 0;"><strong>💰 Market:</strong> {price_impact}</p>
+                                            <p style="margin: 8px 0;"><strong>💡 Advisory:</strong> {recommendation}</p>
+                                        </div>
+                                        """, unsafe_allow_html=True)
+                                        
+                                        # 5. Trust Layer
+                                        st.markdown("""
+                                        <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #6c757d;">
+                                            <p style="color: #6c757d; font-size: 12px; margin: 0;">
+                                                <strong>⚠️ Disclaimer:</strong> This AI-based detection is for preliminary guidance only. 
+                                                For severe cases, consult your local agricultural extension office.
+                                            </p>
+                                        </div>
+                                        """, unsafe_allow_html=True)
                                 else:
                                     health_confidence = int((1 - is_healthy_prob) * 100) if is_healthy_prob else 95
                                     st.success(f"✅ Your plant appears healthy! (Health confidence: {health_confidence}%)")
