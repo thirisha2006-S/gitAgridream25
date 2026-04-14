@@ -2687,15 +2687,15 @@ elif menu == get_text("menu_disease", global_lang):
                                 
                                 # Estimate impact based on severity
                                 if severity == "SEVERE":
-                                    yield_impact = "Estimated 30-50% yield reduction possible (based on typical disease impact patterns)"
-                                    price_impact = "Quality drop may reduce market value (estimated 20-40% reduction based on typical disease impact)"
+                                    yield_impact = "Potential yield reduction possible (estimate based on typical disease impact patterns - actual impact varies by crop health and management)"
+                                    price_impact = "Quality impact may affect market value (actual impact depends on disease severity and market conditions)"
                                     recommendation = "Consider harvesting early if crop is near maturity to minimize loss"
                                 elif severity == "MODERATE":
-                                    yield_impact = "Estimated 10-25% yield reduction possible (depends on treatment timing and crop health)"
+                                    yield_impact = "Potential yield reduction possible (depends on treatment timing and crop health - actual impact varies)"
                                     price_impact = "Minor quality impact on market price (may affect grade but generally recoverable)"
                                     recommendation = "Treat immediately and monitor for 7 days"
                                 else:
-                                    yield_impact = "Estimated 5-10% yield impact if left untreated (minimal if treated promptly)"
+                                    yield_impact = "Minimal yield impact expected if treated promptly (actual impact varies by crop and management)"
                                     price_impact = "Minimal impact expected if treated promptly and properly"
                                     recommendation = "Apply treatment and recheck in 1 week"
                                 
