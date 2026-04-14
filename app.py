@@ -1918,7 +1918,15 @@ menu = st.sidebar.radio(
 )
 
 
-st.markdown(f"<h1 style='text-align:center; color:green;'>🌱 {get_text('title', global_lang)}</h1>", unsafe_allow_html=True)
+# Enhanced Logo / Header Section
+st.markdown("""
+<div style="text-align: center; padding: 20px 0; background: linear-gradient(135deg, #e8f5e9 0%, #ffffff 100%); border-radius: 15px; margin-bottom: 10px;">
+    <div style="font-size: 60px; margin-bottom: 10px;">🌾</div>
+    <h1 style="color: #1a7f2e; margin: 0; font-size: 42px; font-weight: bold;">AgriDream</h1>
+    <p style="color: #666; font-size: 16px; margin: 5px 0;">Smart Agriculture Decision System</p>
+    <p style="color: #888; font-size: 14px;">📊 Price Forecasting | 🌾 Crop Recommendation | 🌤️ Weather Advisory | 🩺 Disease Detection</p>
+</div>
+""", unsafe_allow_html=True)
 st.markdown("---")
 
 # Farmer Profile Setup
