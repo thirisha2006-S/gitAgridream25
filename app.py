@@ -2443,9 +2443,37 @@ elif menu == get_text("menu_crop_rec", global_lang):
                     for factor in crop_reasoning['factors']:
                         st.caption(f"📌 {factor}")
             
-            # Get profit info for this crop - ENHANCED CARD
+            # Get profit info for this crop - ENHANCED CARD WITH PLANT CYCLE
             if crop in CROP_PROFIT_INFO:
                 profit = CROP_PROFIT_INFO[crop]
+                
+                # Get duration in days for timeline calculation
+                duration_str = profit.get('growth_period', '120 days')
+                # Extract min and max days
+                if 'month' in duration_str.lower():
+                    months = ''.join(filter(str.isdigit, duration_str.split('-')[0] if '-' in duration_str else duration_str))
+                    min_days = int(months) * 30 if months else 120
+                    max_days = int(months) * 30 if months else 120
+                else:
+                    nums = ''.join(filter(str.isdigit, duration_str))
+                    if '-' in duration_str:
+                        parts = duration_str.split('-')
+                        min_days = int(''.join(filter(str.isdigit, parts[0]))) if parts[0] else 90
+                        max_days = int(''.join(filter(str.isdigit, parts[1]))) if len(parts) > 1 and parts[1] else 120
+                    else:
+                        min_days = max_days = int(nums) if nums else 120
+                
+                # Create visual timeline
+                timeline_html = f"""
+                <div style="background: linear-gradient(90deg, #4CAF50 0%, #8BC34A 50%, #CDDC39 100%); 
+                            padding: 10px; border-radius: 8px; margin: 10px 0; text-align: center;">
+                    <span style="color: white; font-weight: bold;">🌱 Plant Duration Timeline</span><br>
+                    <span style="color: white; font-size: 12px;">
+                        Day 1 → 🌿 Growth → 🌾 Harvest (Day {min_days}-{max_days})
+                    </span>
+                </div>
+                """
+                st.markdown(timeline_html, unsafe_allow_html=True)
                 
                 # Create enhanced card with all info
                 st.markdown(f"""
@@ -2457,28 +2485,32 @@ elif menu == get_text("menu_crop_rec", global_lang):
                             <td>{conf:.1f}%</td>
                         </tr>
                         <tr>
-                            <td><strong>⏳ Duration:</strong></td>
+                            <td><strong>⏳ Plant Duration:</strong></td>
                             <td>{profit['growth_period']}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>📆 Growth Cycle:</strong></td>
+                            <td>{min_days}-{max_days} days</td>
                         </tr>
                         <tr>
                             <td><strong>💰 Income Timing:</strong></td>
                             <td>Get money after ~{profit['income_timing']}</td>
                         </tr>
                         <tr>
-                            <td><strong>📅 Harvest:</strong></td>
+                            <td><strong>📅 Harvest Time:</strong></td>
                             <td>{profit['harvest_month']}</td>
                         </tr>
                         <tr>
-                            <td><strong>💵 Initial Cost:</strong></td>
+                            <td><strong>💵 Initial Investment:</strong></td>
                             <td>{profit.get('initial_cost', 'N/A')}</td>
                         </tr>
                         <tr>
-                            <td><strong>💧 Water Need:</strong></td>
+                            <td><strong>💧 Water Requirement:</strong></td>
                             <td>{profit.get('water_need', 'Medium')}</td>
                         </tr>
                         <tr>
-                            <td><strong>🔄 After Harvest:</strong></td>
-                            <td>Can grow {profit.get('next_crop', 'N/A')}</td>
+                            <td><strong>🔄 Crop Rotation:</strong></td>
+                            <td>After harvest → {profit.get('next_crop', 'N/A')}</td>
                         </tr>
                     </table>
                 </div>
