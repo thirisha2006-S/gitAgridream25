@@ -292,6 +292,30 @@ CROP_PROFIT_INFO = {
     }
 }
 
+# Indian state to capital city mapping for weather
+INDIAN_STATE_CAPITALS = {
+    'Maharashtra': 'Mumbai',
+    'Tamil Nadu': 'Chennai',
+    'Uttar Pradesh': 'Lucknow',
+    'Karnataka': 'Bangalore',
+    'Gujarat': 'Ahmedabad',
+    'Madhya Pradesh': 'Bhopal',
+    'Punjab': 'Chandigarh',
+    'West Bengal': 'Kolkata',
+    'Andhra Pradesh': 'Visakhapatnam',
+    'Telangana': 'Hyderabad',
+    'Rajasthan': 'Jaipur',
+    'Kerala': 'Thiruvananthapuram',
+    'Bihar': 'Patna',
+    'Jharkhand': 'Ranchi',
+    'Haryana': 'Chandigarh',
+    'Chhattisgarh': 'Raipur',
+    'Odisha': 'Bhubaneswar',
+    'Assam': 'Guwahati',
+    'Uttarakhand': 'Dehradun',
+    'Goa': 'Panaji'
+}
+
 # Weather function
 def get_weather(city):
     # Use hardcoded API key as primary, with fallback to env variable
@@ -301,6 +325,10 @@ def get_weather(city):
     
     if not api_key:
         return None, "API key not configured"
+    
+    # Map Indian state names to capital cities
+    if city in INDIAN_STATE_CAPITALS:
+        city = INDIAN_STATE_CAPITALS[city]
 
     try:
         url = f"https://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}&units=metric"
@@ -1835,25 +1863,92 @@ st.markdown("---")
 
 # Farmer Profile Setup
 st.sidebar.subheader("👨‍🌾 " + get_text("farmer_profile", global_lang))
-farmer_name = st.sidebar.text_input(get_text("farmer_name", global_lang), key="farmer_name")
-farmer_age = st.sidebar.number_input(get_text("age", global_lang), min_value=18, max_value=100, value=30, key="farmer_age")
+
+# Load farmer from database on every page load (check by most recent farmer)
+try:
+    farmers = database.get_all_farmers()
+    if farmers:
+        latest_farmer = farmers[0]
+        st.session_state.farmer_profile = {
+            "name": latest_farmer.get('name', ''),
+            "age": 30,
+            "family1": {"name": "", "phone": latest_farmer.get('emergency_contact', '') or latest_farmer.get('phone', '')},
+            "family2": {"name": "", "phone": ""}
+        }
+        st.session_state.current_farmer_id = latest_farmer.get('id')
+        FAMILY_NUMBERS = get_family_numbers(st.session_state.farmer_profile)
+except Exception as e:
+    print(f"Error loading farmer: {e}")
+
+# Get values from session state
+profile = st.session_state.get('farmer_profile', {})
+farmer_name = st.sidebar.text_input(get_text("farmer_name", global_lang), 
+    value=profile.get('name', ''), key="farmer_name")
+farmer_age = st.sidebar.number_input(get_text("age", global_lang), 
+    min_value=18, max_value=100, value=profile.get('age', 30), key="farmer_age")
 st.sidebar.subheader(get_text("emergency_contacts", global_lang))
-family1_name = st.sidebar.text_input(get_text("family_member_1", global_lang), key="family1_name")
-family1_phone = st.sidebar.text_input(get_text("phone", global_lang), key="family1_phone")
-family2_name = st.sidebar.text_input(get_text("family_member_2", global_lang), key="family2_name")
-family2_phone = st.sidebar.text_input(get_text("phone", global_lang), key="family2_phone")
+family1_name = st.sidebar.text_input(get_text("family_member_1", global_lang), 
+    value=profile.get('family1', {}).get('name', ''), key="family1_name")
+family1_phone = st.sidebar.text_input(get_text("phone", global_lang), 
+    value=profile.get('family1', {}).get('phone', ''), key="family1_phone")
+family2_name = st.sidebar.text_input(get_text("family_member_2", global_lang), 
+    value=profile.get('family2', {}).get('name', ''), key="family2_name")
+family2_phone = st.sidebar.text_input(get_text("phone", global_lang), 
+    value=profile.get('family2', {}).get('phone', ''), key="family2_phone")
 
 if st.sidebar.button(get_text("save_profile", global_lang)):
-    st.sidebar.success(get_text("profile_saved", global_lang))
-    # Store in session state for emergency alerts
-    st.session_state.farmer_profile = {
-        "name": farmer_name,
-        "age": farmer_age,
-        "family1": {"name": family1_name, "phone": family1_phone},
-        "family2": {"name": family2_name, "phone": family2_phone}
-    }
-    # Update global FAMILY_NUMBERS variable
-    FAMILY_NUMBERS = get_family_numbers(st.session_state.farmer_profile)
+    # Save to database (permanent storage)
+    if farmer_name:
+        try:
+            # Try to find existing farmer by name, or create new
+            farmers = database.get_all_farmers()
+            existing_farmer = None
+            for f in farmers:
+                if f.get('name') == farmer_name:
+                    existing_farmer = f
+                    break
+            
+            if existing_farmer:
+                # Update existing farmer with all fields
+                database.update_farmer(existing_farmer['id'], 
+                    phone=family1_phone if family1_phone else existing_farmer.get('phone'),
+                    emergency_contact=family1_phone if family1_phone else existing_farmer.get('emergency_contact'),
+                    state="Maharashtra")
+                st.session_state.current_farmer_id = existing_farmer['id']
+            else:
+                # Insert new farmer
+                farmer_id = database.insert_farmer(
+                    name=farmer_name,
+                    state="Maharashtra",
+                    phone=family1_phone,
+                    emergency_contact=family1_phone
+                )
+                st.session_state.current_farmer_id = farmer_id
+            
+            # Also store in session state for current session
+            st.session_state.farmer_profile = {
+                "name": farmer_name,
+                "age": farmer_age,
+                "family1": {"name": family1_name, "phone": family1_phone},
+                "family2": {"name": family2_name, "phone": family2_phone}
+            }
+            st.session_state.farmer_loaded = True  # Mark as loaded
+            # Update global FAMILY_NUMBERS variable
+            FAMILY_NUMBERS = get_family_numbers(st.session_state.farmer_profile)
+            st.sidebar.success(get_text("profile_saved", global_lang))
+        except Exception as e:
+            print(f"Error saving profile: {e}")
+            # Fallback to session state if database fails
+            st.session_state.farmer_profile = {
+                "name": farmer_name,
+                "age": farmer_age,
+                "family1": {"name": family1_name, "phone": family1_phone},
+                "family2": {"name": family2_name, "phone": family2_phone}
+            }
+            FAMILY_NUMBERS = get_family_numbers(st.session_state.farmer_profile)
+            st.sidebar.success(get_text("profile_saved", global_lang))
+    else:
+        st.sidebar.warning("Please enter your name to save profile")
 
 # ---------------------------
 # Dashboard
@@ -1965,14 +2060,14 @@ if menu == get_text("menu_dashboard", global_lang):
         state_prices = df_prices[df_prices['State'] == dashboard_state] if dashboard_state in df_prices['State'].values else df_prices
         trends = analyze_price_trends(state_prices if len(state_prices) > 0 else df_prices)
         
-        # Get weather for selected state
+        # Get weather for selected state (state name will be mapped to capital city)
         weather_data = None
         weather_reason = ""
         try:
-            weather_data, _ = get_weather(dashboard_state.split()[0])
+            weather_data, _ = get_weather(dashboard_state)
         except:
             try:
-                weather_data, _ = get_weather("Delhi")
+                weather_data, _ = get_weather("Mumbai")
             except:
                 pass
         

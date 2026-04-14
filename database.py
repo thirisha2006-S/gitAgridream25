@@ -6,13 +6,15 @@ Optimized for read-heavy operations with proper error handling.
 """
 
 import sqlite3
+import os
 import pandas as pd
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any, Tuple
 import random
 
-# Database file path
-DB_PATH = "agridream.db"
+# Database file path - use absolute path to ensure consistency
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE_DIR, "agridream.db")
 
 
 # ============================================================
@@ -210,6 +212,18 @@ def get_farmer_by_phone(phone: str) -> Optional[Dict]:
         cursor.execute("SELECT * FROM farmers WHERE phone = ?", (phone,))
         row = cursor.fetchone()
         return dict(row) if row else None
+    finally:
+        conn.close()
+
+
+def get_all_farmers() -> List[Dict]:
+    """Fetch all farmers from database."""
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM farmers ORDER BY created_at DESC")
+        rows = cursor.fetchall()
+        return [dict(row) for row in rows]
     finally:
         conn.close()
 
