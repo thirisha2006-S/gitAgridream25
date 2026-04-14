@@ -4691,15 +4691,49 @@ elif menu == get_text("menu_emotion", global_lang):
                 # Hide typing indicator
                 st.session_state.is_typing = False
 
-                # Check for emergency situation
+                # Check for emergency situation - NOW WITH USER CONSENT (safer approach)
                 emergency_sent = False
                 sms_count = 0
-
+                
+                # Instead of auto-sending, show suggestion to user
                 if detected_emotion == "high_risk" and farmer_profile:
-                    sms_count = send_emergency_whatsapp(farmer_profile, "Current Location", lang_choice)
-                    if sms_count > 0:
-                        emergency_sent = True
-                        st.session_state.emergency_alerts_sent += 1
+                    # Show intervention suggestion, not auto-send
+                    st.warning("""
+                    💙 **You seem to be going through a difficult moment.**
+                    
+                    You don't have to handle this alone. Would you like to inform a family member?
+                    """)
+                    
+                    # Generate suggested message
+                    farmer_name = farmer_profile.get('name', 'Farmer')
+                    suggested_message = f"Hi, I'm not feeling okay right now. Can you please talk to me?"
+                    
+                    # Show message options
+                    msg_col1, msg_col2, msg_col3 = st.columns(3)
+                    with msg_col1:
+                        send_suggested = st.button("📩 Send to Family", key="send_family_msg")
+                    with msg_col2:
+                        edit_msg = st.button("✏️ Edit Message", key="edit_family_msg")
+                    with msg_col3:
+                        dismiss_msg = st.button("❌ Not Now", key="dismiss_family_msg")
+                    
+                    if send_suggested:
+                        # Send message with user consent
+                        sms_count = send_emergency_whatsapp(farmer_profile, "Current Location", lang_choice)
+                        if sms_count > 0:
+                            emergency_sent = True
+                            st.session_state.emergency_alerts_sent += 1
+                            st.success("✅ Message sent to your family member. They will contact you soon.")
+                    elif edit_msg:
+                        # Let user edit the message
+                        custom_message = st.text_area("Edit your message:", value=suggested_message, key="custom_emergency_msg")
+                        if st.button("✅ Send Custom Message"):
+                            sms_count = send_emergency_whatsapp(farmer_profile, "Current Location", lang_choice)
+                            if sms_count > 0:
+                                emergency_sent = True
+                                st.session_state.emergency_alerts_sent += 1
+                                st.success("✅ Message sent!")
+                    # Dismiss does nothing - just continues conversation
 
                 # Prevent duplicate message appending
                 message_exists = False
