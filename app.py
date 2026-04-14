@@ -1,10 +1,12 @@
 import streamlit as st
-from datetime import datetime
+from datetime import datetime, timedelta
 import pandas as pd
 import numpy as np
 import requests
 import os
 from dotenv import load_dotenv
+# Database module
+import database
 # from googletrans import Translator  # Replaced with translate library for stability
 from translate import Translator
 import openai
@@ -16,9 +18,80 @@ import plotly.graph_objects as go
 TRANSFORMERS_AVAILABLE = False
 print("Using Deep AI for enhanced features")
 
+# Initialize database on app start
+@st.cache_resource
+def init_db():
+    """Initialize database once"""
+    return database.initialize_database()
+
+# Run database initialization
+db_stats = init_db()
+print(f"Database initialized: {db_stats}")
+
 
 
 load_dotenv()
+
+# ---------------------------
+# Database Helper Functions (Use Database Instead of CSV)
+# ---------------------------
+
+def get_price_data_from_db(crop: str, state: str, days: int = 30) -> pd.DataFrame:
+    """Get price data from database for forecasting"""
+    try:
+        df = database.get_price_by_crop_state(crop, state, limit=days)
+        return df
+    except Exception as e:
+        print(f"Error fetching price data: {e}")
+        return pd.DataFrame()
+
+def get_price_stats_from_db(crop: str, state: str) -> dict:
+    """Get price statistics from database"""
+    try:
+        return database.get_price_statistics(crop, state)
+    except Exception as e:
+        print(f"Error fetching price stats: {e}")
+        return {}
+
+def get_trend_from_db(crop: str, state: str) -> str:
+    """Get price trend from database"""
+    try:
+        return database.calculate_trend(crop, state)
+    except Exception as e:
+        print(f"Error calculating trend: {e}")
+        return "stable"
+
+def get_confidence_from_db(crop: str, state: str) -> str:
+    """Get prediction confidence from database"""
+    try:
+        return database.calculate_confidence(crop, state)
+    except Exception as e:
+        print(f"Error calculating confidence: {e}")
+        return "Low"
+
+def save_prediction_to_db(farmer_id: int, crop: str, state: str, current_price: float,
+                         predicted_price: float, trend: str, confidence: str,
+                         decision: str, decision_reason: str, money_impact: str) -> int:
+    """Save prediction to database"""
+    try:
+        return database.insert_prediction(
+            farmer_id=farmer_id, crop=crop, state=state,
+            current_price=current_price, predicted_price=predicted_price,
+            trend=trend, confidence=confidence, decision=decision,
+            decision_reason=decision_reason, money_impact=money_impact
+        )
+    except Exception as e:
+        print(f"Error saving prediction: {e}")
+        return 0
+
+def create_alert_for_user(farmer_id: int, alert_type: str, title: str, 
+                          message: str, severity: str = "Medium") -> int:
+    """Create alert for farmer"""
+    try:
+        return database.create_alert(farmer_id, alert_type, title, message, severity)
+    except Exception as e:
+        print(f"Error creating alert: {e}")
+        return 0
 
 # ---------------------------
 # Global Variables and Functions
