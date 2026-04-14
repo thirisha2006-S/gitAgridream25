@@ -70,15 +70,154 @@ crop_data = {
     "Maize": {"season": "Kharif", "price_forecast": [1500, 1600, 1700]},
 }
 
-# Crop recommendation function
+# Crop recommendation function with detailed reasoning
 def recommend_crop(N, P, K, temperature, humidity, ph, rainfall, state):
-    # Filter by state if needed, but for simplicity, use all data
+    """
+    Enhanced crop recommendation with reasoning and insights
+    Returns: crops, confidences, reasoning_dict
+    """
     conditions = np.array([N, P, K, temperature, humidity, ph, rainfall])
     distances = np.sqrt(np.sum((df_crop[['N', 'P', 'K', 'temperature', 'humidity', 'ph', 'rainfall']] - conditions) ** 2, axis=1))
     closest_indices = distances.nsmallest(3).index
     recommended_crops = df_crop.iloc[closest_indices]['label'].tolist()
     confidences = [max(0, min(100, 100 - distances[i] / 10)) for i in closest_indices]
-    return recommended_crops, confidences
+    
+    # Generate reasoning for each crop
+    reasoning = {}
+    for crop in recommended_crops:
+        reasons = []
+        factors = []
+        
+        # Analyze NPK
+        if N > 80:
+            reasons.append("High nitrogen soil supports growth")
+            factors.append("Nitrogen (high)")
+        elif N < 30:
+            reasons.append("Low nitrogen - suitable for nitrogen-fixing crops")
+            factors.append("Nitrogen (low)")
+            
+        if P > 60:
+            reasons.append("High phosphorus promotes root development")
+            factors.append("Phosphorus (high)")
+            
+        if K > 100:
+            reasons.append("High potassium enhances disease resistance")
+            factors.append("Potassium (high)")
+        
+        # Temperature analysis
+        if 20 <= temperature <= 30:
+            reasons.append("Moderate temperature ideal for most crops")
+            factors.append("Temperature (optimal)")
+        elif temperature > 35:
+            reasons.append("Warm climate suits heat-tolerant crops")
+            factors.append("Temperature (warm)")
+        elif temperature < 15:
+            reasons.append("Cool climate suitable for winter crops")
+            factors.append("Temperature (cool)")
+        
+        # Rainfall analysis
+        if rainfall > 150:
+            reasons.append("High rainfall reduces irrigation needs")
+            factors.append("Rainfall (high)")
+        elif rainfall < 50:
+            reasons.append("Low rainfall - drought-tolerant crops recommended")
+            factors.append("Rainfall (low)")
+        else:
+            reasons.append("Moderate rainfall suitable for diverse crops")
+            factors.append("Rainfall (moderate)")
+        
+        # pH analysis
+        if 6.0 <= ph <= 7.5:
+            reasons.append("Optimal pH range for nutrient uptake")
+            factors.append("pH (optimal)")
+        elif ph < 6.0:
+            reasons.append("Acidic soil - suitable for acid-tolerant crops")
+            factors.append("pH (acidic)")
+        else:
+            reasons.append("Alkaline soil - suitable for alkaline-tolerant crops")
+            factors.append("pH (alkaline)")
+        
+        reasoning[crop] = {
+            'reasons': reasons[:4],  # Top 4 reasons
+            'factors': factors[:4]   # Top 4 factors
+        }
+    
+    return recommended_crops, confidences, reasoning
+
+
+# Profitability and market data for crops
+CROP_PROFIT_INFO = {
+    "Rice": {
+        "profit_outlook": "Medium",
+        "market_value": "₹2,000-2,500/quintal",
+        "season": "Kharif (June-Oct)",
+        "risk": {"water": "High", "pest": "Medium"},
+        "growth_period": "120-150 days"
+    },
+    "Wheat": {
+        "profit_outlook": "Medium",
+        "market_value": "₹2,200-2,600/quintal",
+        "season": "Rabi (Nov-Apr)",
+        "risk": {"water": "Medium", "pest": "Medium"},
+        "growth_period": "120-150 days"
+    },
+    "Maize": {
+        "profit_outlook": "High",
+        "market_value": "₹1,500-1,900/quintal",
+        "season": "Kharif & Rabi",
+        "risk": {"water": "Medium", "pest": "High"},
+        "growth_period": "90-120 days"
+    },
+    "Cotton": {
+        "profit_outlook": "High",
+        "market_value": "₹5,500-6,500/quintal",
+        "season": "Kharif (June-Nov)",
+        "risk": {"water": "Low", "pest": "High"},
+        "growth_period": "150-180 days"
+    },
+    "Sugarcane": {
+        "profit_outlook": "High",
+        "market_value": "₹3,500-4,200/quintal",
+        "season": "Kharif (12-18 months)",
+        "risk": {"water": "High", "pest": "Medium"},
+        "growth_period": "12-18 months"
+    },
+    "Tomato": {
+        "profit_outlook": "High",
+        "market_value": "₹1,500-3,000/quintal",
+        "season": "All seasons",
+        "risk": {"water": "Medium", "pest": "High"},
+        "growth_period": "90-120 days"
+    },
+    "Potato": {
+        "profit_outlook": "Medium",
+        "market_value": "₹1,200-1,800/quintal",
+        "season": "Rabi (90-120 days)",
+        "risk": {"water": "Medium", "pest": "Medium"},
+        "growth_period": "90-120 days"
+    },
+    "Onion": {
+        "profit_outlook": "High",
+        "market_value": "₹1,500-2,500/quintal",
+        "season": "Rabi & Kharif",
+        "risk": {"water": "Low", "pest": "Medium"},
+        "growth_period": "90-120 days"
+    },
+    "Groundnut": {
+        "profit_outlook": "Medium",
+        "market_value": "₹4,000-5,000/quintal",
+        "season": "Kharif",
+        "risk": {"water": "Low", "pest": "Medium"},
+        "growth_period": "120-150 days"
+    },
+    "Mustard": {
+        "profit_outlook": "Medium",
+        "market_value": "₹5,000-6,000/quintal",
+        "season": "Rabi",
+        "risk": {"water": "Low", "pest": "Low"},
+        "growth_period": "120-150 days"
+    }
+}
 
 # Weather function
 def get_weather(city):
@@ -1693,13 +1832,71 @@ elif menu == get_text("menu_crop_rec", global_lang):
         state = st.selectbox(get_text("state", global_lang), df_crop['State'].unique())
 
     if st.button(get_text("get_recommendation", global_lang)):
-        recommended_crops, confidences = recommend_crop(N, P, K, temperature, humidity, ph, rainfall, state)
+        recommended_crops, confidences, reasoning = recommend_crop(N, P, K, temperature, humidity, ph, rainfall, state)
 
         st.write(f"### {get_text('top_3_crops', global_lang)}")
+        
+        # Display each crop with reasoning
         for i, (crop, conf) in enumerate(zip(recommended_crops, confidences), 1):
-            st.write(f"{i}. **{crop}** - {get_text('confidence', global_lang)}: {conf:.1f}%")
+            st.markdown(f"**{i}. {crop}** - {get_text('confidence', global_lang)}: {conf:.1f}%")
+            
+            # Show reasoning for this crop
+            if crop in reasoning:
+                crop_reasoning = reasoning[crop]
+                with st.expander(f"🎯 Why {crop}?"):
+                    for reason in crop_reasoning['reasons']:
+                        st.write(f"• {reason}")
+                    
+                    st.markdown("**Key Factors:**")
+                    for factor in crop_reasoning['factors']:
+                        st.caption(f"📌 {factor}")
+            
+            # Get profit info for this crop
+            if crop in CROP_PROFIT_INFO:
+                profit = CROP_PROFIT_INFO[crop]
+                
+                # Profit Outlook
+                profit_color = "🟢" if profit['profit_outlook'] == "High" else "🟡" if profit['profit_outlook'] == "Medium" else "🔴"
+                st.markdown(f"**💰 Profit Outlook:** {profit_color} {profit['profit_outlook']} ({profit['market_value']})")
+                
+                # Season
+                st.markdown(f"**📅 Best Season:** {profit['season']}")
+                
+                # Growth Period
+                st.markdown(f"**🌱 Growth Period:** {profit['growth_period']}")
+                
+                # Risk Assessment
+                risk_color_w = "🟢" if profit['risk']['water'] == "Low" else "🟡" if profit['risk']['water'] == "Medium" else "🔴"
+                risk_color_p = "🟢" if profit['risk']['pest'] == "Low" else "🟡" if profit['risk']['pest'] == "Medium" else "🔴"
+                st.markdown(f"**⚠️ Risk:** Water {risk_color_w} {profit['risk']['water']} | Pest {risk_color_p} {profit['risk']['pest']}")
+            
+            st.markdown("---")
 
-        # Irrigation Recommendation
+        # Risk Warnings based on inputs
+        st.write("### ⚠️ Risk Warnings")
+        
+        risk_warnings = []
+        
+        # Check for potential issues
+        if rainfall < 50 and irrigation_type == "Rain-fed":
+            risk_warnings.append("⚠️ High risk: Low rainfall + rain-fed irrigation may cause crop failure")
+        
+        if ph < 5.5 or ph > 8.5:
+            risk_warnings.append(f"⚠️ pH stress: Soil pH {ph} may limit nutrient availability")
+        
+        if temperature > 38:
+            risk_warnings.append("⚠️ Heat stress: High temperature may affect crop development")
+        
+        if N > 100:
+            risk_warnings.append("⚠️ Excess nitrogen: May cause vegetative growth, delay maturity")
+        
+        if risk_warnings:
+            for warning in risk_warnings:
+                st.warning(warning)
+        else:
+            st.success("✅ Low risk conditions detected for recommended crops")
+
+        # Dynamic Irrigation Recommendation
         st.write(f"### {get_text('irrigation_rec', global_lang)}")
         irrigation_recommendations = {
             "Drip Irrigation": "Highly efficient for water conservation. Ideal for row crops and vegetables. Reduces water usage by 30-50%.",
@@ -1715,11 +1912,21 @@ elif menu == get_text("menu_crop_rec", global_lang):
 
         # Additional irrigation advice based on rainfall
         if rainfall < 50:
-            st.warning("Low rainfall detected. Consider increasing irrigation frequency or switching to more efficient methods.")
+            st.warning("⚠️ Low rainfall: Consider drip irrigation to conserve water")
         elif 50 <= rainfall < 100:
-            st.info("Moderate rainfall. Your irrigation method should complement natural rainfall effectively.")
+            st.info("📊 Moderate rainfall: Your irrigation should complement natural rainfall")
         else:
-            st.success("Good rainfall conditions. Your irrigation method will provide excellent backup during dry spells.")
+            st.success("✅ Good rainfall: Flood irrigation may be used, but drip recommended for efficiency")
+            
+        # Dynamic irrigation based on crop and conditions
+        if recommended_crops:
+            top_crop = recommended_crops[0]
+            if top_crop in ["Rice"]:
+                st.info("💧 **{crop}:** Flood irrigation suitable. Maintain 5-10cm water layer in fields.".format(crop=top_crop))
+            elif top_crop in ["Cotton", "Groundnut"]:
+                st.info("💧 **{crop}:** Drip or sprinkler recommended due to water sensitivity.".format(crop=top_crop))
+            elif top_crop in ["Tomato", "Onion", "Potato"]:
+                st.info("💧 **{crop}:** Drip irrigation ideal for controlled water delivery.".format(crop=top_crop))
 
         # Soil Type Advice
         st.write(f"### {get_text('soil_considerations', global_lang)}")
