@@ -218,77 +218,137 @@ def recommend_crop(N, P, K, temperature, humidity, ph, rainfall, state):
     return recommended_crops, confidences, reasoning
 
 
-# Profitability and market data for crops
+# Profitability and market data for crops (ENHANCED with income timing)
 CROP_PROFIT_INFO = {
     "Rice": {
         "profit_outlook": "Medium",
         "market_value": "₹2,000-2,500/quintal",
         "season": "Kharif (June-Oct)",
+        "season_short": "Kharif",
         "risk": {"water": "High", "pest": "Medium"},
-        "growth_period": "120-150 days"
+        "growth_period": "120-150 days",
+        "income_timing": "4 months",
+        "harvest_month": "October",
+        "next_crop": "Wheat, Mustard, Peas",
+        "water_need": "High",
+        "initial_cost": "₹15,000/acre"
     },
     "Wheat": {
         "profit_outlook": "Medium",
         "market_value": "₹2,200-2,600/quintal",
         "season": "Rabi (Nov-Apr)",
+        "season_short": "Rabi",
         "risk": {"water": "Medium", "pest": "Medium"},
-        "growth_period": "120-150 days"
+        "growth_period": "120-150 days",
+        "income_timing": "5 months",
+        "harvest_month": "April",
+        "next_crop": "Rice, Maize, Cotton",
+        "water_need": "Medium",
+        "initial_cost": "₹12,000/acre"
     },
     "Maize": {
         "profit_outlook": "High",
         "market_value": "₹1,500-1,900/quintal",
         "season": "Kharif & Rabi",
+        "season_short": "Both",
         "risk": {"water": "Medium", "pest": "High"},
-        "growth_period": "90-120 days"
+        "growth_period": "90-120 days",
+        "income_timing": "3-4 months",
+        "harvest_month": "September/November",
+        "next_crop": "Wheat, Mustard",
+        "water_need": "Medium",
+        "initial_cost": "₹10,000/acre"
     },
     "Cotton": {
         "profit_outlook": "High",
         "market_value": "₹5,500-6,500/quintal",
         "season": "Kharif (June-Nov)",
+        "season_short": "Kharif",
         "risk": {"water": "Low", "pest": "High"},
-        "growth_period": "150-180 days"
+        "growth_period": "150-180 days",
+        "income_timing": "5-6 months",
+        "harvest_month": "November",
+        "next_crop": "Wheat, Mustard",
+        "water_need": "Low",
+        "initial_cost": "₹20,000/acre"
     },
     "Sugarcane": {
         "profit_outlook": "High",
         "market_value": "₹3,500-4,200/quintal",
         "season": "Kharif (12-18 months)",
+        "season_short": "Annual",
         "risk": {"water": "High", "pest": "Medium"},
-        "growth_period": "12-18 months"
+        "growth_period": "12-18 months",
+        "income_timing": "12-18 months",
+        "harvest_month": "December-May",
+        "next_crop": "Wheat, Mustard",
+        "water_need": "High",
+        "initial_cost": "₹50,000/acre"
     },
     "Tomato": {
         "profit_outlook": "High",
         "market_value": "₹1,500-3,000/quintal",
         "season": "All seasons",
+        "season_short": "All Year",
         "risk": {"water": "Medium", "pest": "High"},
-        "growth_period": "90-120 days"
+        "growth_period": "90-120 days",
+        "income_timing": "3-4 months",
+        "harvest_month": "Variable",
+        "next_crop": "Leafy vegetables, Pulses",
+        "water_need": "Medium",
+        "initial_cost": "₹25,000/acre"
     },
     "Potato": {
         "profit_outlook": "Medium",
         "market_value": "₹1,200-1,800/quintal",
         "season": "Rabi (90-120 days)",
+        "season_short": "Rabi",
         "risk": {"water": "Medium", "pest": "Medium"},
-        "growth_period": "90-120 days"
+        "growth_period": "90-120 days",
+        "income_timing": "3-4 months",
+        "harvest_month": "February-March",
+        "next_crop": "Rice, Maize",
+        "water_need": "Medium",
+        "initial_cost": "₹18,000/acre"
     },
     "Onion": {
         "profit_outlook": "High",
         "market_value": "₹1,500-2,500/quintal",
         "season": "Rabi & Kharif",
+        "season_short": "Rabi/Kharif",
         "risk": {"water": "Low", "pest": "Medium"},
-        "growth_period": "90-120 days"
+        "growth_period": "90-120 days",
+        "income_timing": "3-4 months",
+        "harvest_month": "March/May",
+        "next_crop": "Rice, Maize",
+        "water_need": "Low",
+        "initial_cost": "₹15,000/acre"
     },
     "Groundnut": {
         "profit_outlook": "Medium",
         "market_value": "₹4,000-5,000/quintal",
         "season": "Kharif",
+        "season_short": "Kharif",
         "risk": {"water": "Low", "pest": "Medium"},
-        "growth_period": "120-150 days"
+        "growth_period": "120-150 days",
+        "income_timing": "4-5 months",
+        "harvest_month": "October",
+        "next_crop": "Wheat, Mustard",
+        "water_need": "Low",
+        "initial_cost": "₹12,000/acre"
     },
     "Mustard": {
         "profit_outlook": "Medium",
         "market_value": "₹5,000-6,000/quintal",
         "season": "Rabi",
+        "season_short": "Rabi",
         "risk": {"water": "Low", "pest": "Low"},
-        "growth_period": "120-150 days"
+        "growth_period": "120-150 days",
+        "income_timing": "4-5 months",
+        "harvest_month": "March",
+        "next_crop": "Rice, Maize",
+        "water_need": "Low",
+        "initial_cost": "₹8,000/acre"
     }
 }
 
@@ -2383,19 +2443,50 @@ elif menu == get_text("menu_crop_rec", global_lang):
                     for factor in crop_reasoning['factors']:
                         st.caption(f"📌 {factor}")
             
-            # Get profit info for this crop
+            # Get profit info for this crop - ENHANCED CARD
             if crop in CROP_PROFIT_INFO:
                 profit = CROP_PROFIT_INFO[crop]
+                
+                # Create enhanced card with all info
+                st.markdown(f"""
+                <div style="background-color: #f0f8ff; padding: 15px; border-radius: 10px; margin: 10px 0; border-left: 5px solid #28a745;">
+                    <h3 style="color: #28a745; margin-top: 0;">🌾 {crop}</h3>
+                    <table style="width: 100%;">
+                        <tr>
+                            <td><strong>📊 Confidence:</strong></td>
+                            <td>{conf:.1f}%</td>
+                        </tr>
+                        <tr>
+                            <td><strong>⏳ Duration:</strong></td>
+                            <td>{profit['growth_period']}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>💰 Income Timing:</strong></td>
+                            <td>Get money after ~{profit['income_timing']}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>📅 Harvest:</strong></td>
+                            <td>{profit['harvest_month']}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>💵 Initial Cost:</strong></td>
+                            <td>{profit.get('initial_cost', 'N/A')}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>💧 Water Need:</strong></td>
+                            <td>{profit.get('water_need', 'Medium')}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>🔄 After Harvest:</strong></td>
+                            <td>Can grow {profit.get('next_crop', 'N/A')}</td>
+                        </tr>
+                    </table>
+                </div>
+                """, unsafe_allow_html=True)
                 
                 # Profit Outlook
                 profit_color = "🟢" if profit['profit_outlook'] == "High" else "🟡" if profit['profit_outlook'] == "Medium" else "🔴"
                 st.markdown(f"**💰 Profit Outlook:** {profit_color} {profit['profit_outlook']} ({profit['market_value']})")
-                
-                # Season
-                st.markdown(f"**📅 Best Season:** {profit['season']}")
-                
-                # Growth Period
-                st.markdown(f"**🌱 Growth Period:** {profit['growth_period']}")
                 
                 # Risk Assessment
                 risk_color_w = "🟢" if profit['risk']['water'] == "Low" else "🟡" if profit['risk']['water'] == "Medium" else "🔴"
