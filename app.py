@@ -1911,10 +1911,7 @@ menu_options = [
     get_text("menu_weather", global_lang),
     get_text("menu_disease", global_lang),
     get_text("menu_emotion", global_lang),
-    "🎙️ Voice Assistant",
-    "🏪 Price Comparator",
-    "📅 Crop Calendar",
-    "💊 Fertilizer Calc"
+    "📅 Crop Calendar"
 ]
 menu = st.sidebar.radio(
     get_text("select_language", global_lang),
@@ -3176,6 +3173,81 @@ elif menu == get_text("menu_price", global_lang):
             st.info("More market data coming soon from eNAM")
     else:
         st.info("Select a crop to see best market suggestion from eNAM")
+
+
+# ============================================================
+# 🏪 MANDI PRICE COMPARATOR (Integrated in Price Forecasting)
+# ============================================================
+    st.markdown("---")
+    st.markdown("""
+    <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 20px; border-radius: 15px; margin: 20px 0;">
+        <h3 style="color: white; margin: 0;">🏪 Market Price Comparator</h3>
+        <p style="color: white; opacity: 0.9; margin: 5px 0;">Compare prices across markets to find the best place to sell!</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Load price data
+    try:
+        df_prices = pd.read_csv('agmarknet_prices.csv')
+        
+        # Select crop and state
+        col1, col2 = st.columns(2)
+        with col1:
+            compare_crop = st.selectbox("🌾 Select Crop to Compare", df_prices['Commodity'].unique(), key="compare_crop")
+        with col2:
+            compare_state = st.selectbox("📍 Select State", df_prices['State'].unique(), key="compare_state")
+        
+        # Filter data
+        crop_data = df_prices[(df_prices['Commodity'] == compare_crop) & 
+                              (df_prices['State'] == compare_state)]
+        
+        if not crop_data.empty and len(crop_data) > 0:
+            # Get market-wise prices
+            market_prices = crop_data.groupby('Market')['Modal_x0020_Price'].agg(['mean', 'min', 'max', 'count'])
+            market_prices = market_prices[market_prices['count'] >= 2]
+            market_prices = market_prices.sort_values('mean', ascending=False)
+            
+            if not market_prices.empty:
+                st.markdown("### 📊 Market Prices (Best to Lowest)")
+                
+                # Best market highlight
+                best_market = market_prices.index[0]
+                best_price = int(market_prices.iloc[0]['mean'])
+                
+                st.markdown(f"""
+                <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); padding: 15px; border-radius: 10px; margin: 10px 0; text-align: center;">
+                    <h4 style="color: white; margin: 0;">🏆 Best Market: {best_market}</h4>
+                    <h3 style="color: white; margin: 5px 0;">💰 ₹{best_price}/quintal</h3>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                # Show all markets
+                for idx, (market, row) in enumerate(market_prices.iterrows(), 1):
+                    price = int(row['mean'])
+                    min_p = int(row['min'])
+                    max_p = int(row['max'])
+                    
+                    if idx == 1:
+                        emoji = "🥇"
+                    elif idx == 2:
+                        emoji = "🥈"
+                    else:
+                        emoji = "🥉"
+                    
+                    st.write(f"{emoji} **{market}**: ₹{price}/quintal (Range: ₹{min_p}-₹{max_p})")
+                
+                if len(market_prices) > 1:
+                    lowest_price = int(market_prices.iloc[-1]['mean'])
+                    savings = best_price - lowest_price
+                    st.markdown(f"💡 **Tip:** Selling at {best_market} instead of lowest market = **₹{savings}/quintal** extra!")
+            else:
+                st.info("Not enough market data. Try different crop/state.")
+        else:
+            st.info("No market data available for this combination.")
+            
+    except Exception as e:
+        st.error(f"Error: {e}")
+
 
 # ---------------------------
 # Weather with Smart Advisory
@@ -5348,13 +5420,13 @@ elif menu == "🎙️ Voice Assistant":
             - 🩺 **Disease**: Ask "My plant is sick"
             
             Or use the menu on the left to access all features!
-            """)
+""")
 
 
 # ============================================================
-# 🏪 MANDI PRICE COMPARATOR
+# 📅 CROP CALENDAR
 # ============================================================
-elif menu == "🏪 Price Comparator":
+elif menu == "📅 Crop Calendar":
     st.markdown("""
     <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 20px; border-radius: 15px; margin: 10px 0;">
         <h2 style="color: white; margin: 0;">🏪 Mandi Price Comparator</h2>
@@ -5559,100 +5631,3 @@ elif menu == "📅 Crop Calendar":
         </div>
     </div>
     """, unsafe_allow_html=True)
-
-
-# ============================================================
-# 💊 FERTILIZER CALCULATOR
-# ============================================================
-elif menu == "💊 Fertilizer Calc":
-    st.markdown("""
-    <div style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); padding: 20px; border-radius: 15px; margin: 10px 0;">
-        <h2 style="color: white; margin: 0;">💊 Fertilizer Calculator</h2>
-        <p style="color: white; opacity: 0.9;">Enter your soil test values and get exact fertilizer recommendations!</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Input soil test values
-    st.markdown("### 🧪 Enter Soil Test Values")
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        soil_n = st.number_input("Nitrogen (N) - kg/ha", min_value=0, value=150)
-        soil_p = st.number_input("Phosphorus (P) - kg/ha", min_value=0, value=25)
-    with col2:
-        soil_k = st.number_input("Potassium (K) - kg/ha", min_value=0, value=150)
-        ph_level = st.slider("Soil pH", 4.0, 9.0, 6.5)
-    
-    crop_for_fert = st.selectbox("🌾 Select Crop", 
-        ["Rice", "Wheat", "Cotton", "Maize", "Tomato", "Potato", "Onion"])
-    
-    if st.button("🧮 Calculate Fertilizer"):
-        # Recommended NPK values for different crops (kg/ha)
-        recommendations = {
-            "Rice": {"N": 100, "P": 50, "K": 50},
-            "Wheat": {"N": 120, "P": 60, "K": 40},
-            "Cotton": {"N": 100, "P": 50, "K": 50},
-            "Maize": {"N": 120, "P": 60, "K": 40},
-            "Tomato": {"N": 150, "P": 100, "K": 100},
-            "Potato": {"N": 120, "P": 80, "K": 100},
-            "Onion": {"N": 100, "P": 60, "K": 80}
-        }
-        
-        req = recommendations.get(crop_for_fert, {"N": 100, "P": 50, "K": 50})
-        
-        # Calculate what to add (required - existing)
-        add_n = max(0, req["N"] - soil_n)
-        add_p = max(0, req["P"] - soil_p)
-        add_k = max(0, req["K"] - soil_k)
-        
-        st.markdown("### 📋 Fertilizer Recommendation")
-        
-        # Display in a nice format
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            if add_n > 0:
-                st.error(f"🌿 Urea: {int(add_n/2.2)} kg/acre\n(Add {add_n} kg N)")
-            else:
-                st.success(f"✅ Nitrogen: Sufficient\n(Current: {soil_n} kg)")
-        
-        with col2:
-            if add_p > 0:
-                st.warning(f"💛 DAP: {int(add_p/0.46)} kg/acre\n(Add {add_p} kg P)")
-            else:
-                st.success(f"✅ Phosphorus: Sufficient\n(Current: {soil_p} kg)")
-        
-        with col3:
-            if add_k > 0:
-                st.info(f"💜 MOP: {int(add_k/0.6)} kg/acre\n(Add {add_k} kg K)")
-            else:
-                st.success(f"✅ Potassium: Sufficient\n(Current: {soil_k} kg)")
-        
-        # Total cost estimate
-        urea_price = 300  # per 50kg
-        dap_price = 1350  # per 50kg
-        mop_price = 900   # per 50kg
-        
-        total_cost = (add_n/2.2 * urea_price/50) + (add_p/0.46 * dap_price/50) + (add_k/0.6 * mop_price/50)
-        
-        st.markdown(f"""
-        <div style="background-color: #e3f2fd; padding: 15px; border-radius: 10px; margin: 15px 0;">
-            <h4 style="margin: 0;">💰 Estimated Cost: ₹{int(total_cost)}/acre</h4>
-            <p style="margin: 5px 0; color: #666;">Based on average fertilizer prices. Actual prices may vary.</p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # pH recommendations
-        st.markdown("### 🌱 pH Recommendations")
-        if ph_level < 5.5:
-            st.warning("⚠️ Soil is acidic. Add lime: 200-300 kg/acre")
-        elif ph_level > 8.5:
-            st.warning("⚠️ Soil is alkaline. Add gypsum: 200-300 kg/acre")
-        else:
-            st.success("✅ pH is in optimal range for most crops!")
-        
-        # Tips
-        st.markdown("### 💡 Tips")
-        st.write("- Apply urea in 2-3 split doses for better efficiency")
-        st.write("- DAP and MOP are best applied at planting time")
-        st.write("- Add organic matter (compost) to improve soil health")
