@@ -1785,30 +1785,309 @@ if st.sidebar.button(get_text("save_profile", global_lang)):
 # ---------------------------
 # Dashboard
 # ---------------------------
+# ============================================================
+# Smart Farm Intelligence Dashboard
+# ============================================================
+
+# Price trend analysis function
+def analyze_price_trends(df_prices):
+    """Analyze price trends to determine direction"""
+    trends = {}
+    for commodity in df_prices['Commodity'].unique()[:10]:
+        commodity_data = df_prices[df_prices['Commodity'] == commodity]['Modal_x0020_Price']
+        if len(commodity_data) > 1:
+            # Simple trend: if recent avg > overall avg = increasing
+            recent = commodity_data.tail(5).mean() if len(commodity_data) >= 5 else commodity_data.mean()
+            overall = commodity_data.mean()
+            if recent > overall * 1.05:
+                trends[commodity] = "↑ increasing"
+            elif recent < overall * 0.95:
+                trends[commodity] = "↓ decreasing"
+            else:
+                trends[commodity] = "→ stable"
+        else:
+            trends[commodity] = "→ stable"
+    return trends
+
+
+# Risk assessment function combining weather and disease
+def get_crop_risk_score(crop, humidity=60, temperature=25):
+    """Calculate risk score based on conditions"""
+    risk_factors = []
+    
+    # Humidity-based disease risk
+    if humidity > 75:
+        risk_factors.append(("High", "High humidity increases fungal disease risk"))
+    elif humidity > 60:
+        risk_factors.append(("Medium", "Moderate humidity - monitor for disease"))
+    
+    # Temperature stress
+    if temperature > 38:
+        risk_factors.append(("High", "Heat stress may affect crop yield"))
+    elif temperature > 35:
+        risk_factors.append(("Medium", "High temperature - ensure adequate irrigation"))
+    
+    # Determine overall risk
+    if not risk_factors:
+        return "🟢 LOW", "Good growing conditions"
+    elif any(r[0] == "High" for r in risk_factors):
+        return "🔴 HIGH", risk_factors[0][1]
+    else:
+        return "🟡 MEDIUM", risk_factors[0][1]
+
+
+# Decision recommendation based on conditions
+def get_decision_recommendation(trends, weather_data=None):
+    """Generate actionable decision recommendation"""
+    recommendations = []
+    action_level = "🟢"  # Default to safe
+    
+    # Analyze price trends
+    increasing = sum(1 for v in trends.values() if "increasing" in v)
+    decreasing = sum(1 for v in trends.values() if "decreasing" in v)
+    
+    if increasing > decreasing:
+        recommendations.append("📈 Prices trending UP - Consider holding crops for better prices")
+        action_level = "🟡"
+    elif decreasing > increasing:
+        recommendations.append("📉 Prices trending DOWN - Consider selling soon to avoid losses")
+        action_level = "🟢"
+    else:
+        recommendations.append("➡️ Prices relatively STABLE - No immediate action needed")
+    
+    # Weather-based recommendations
+    if weather_data:
+        if weather_data.get('rainfall', 0) > 20:
+            recommendations.append("🌧️ Heavy rain expected - Delay harvesting, ensure drainage")
+            action_level = "🔴"
+        elif weather_data.get('temperature', 0) > 38:
+            recommendations.append("☀️ High temperature - Water crops in early morning/evening")
+            action_level = "🟡"
+    
+    return action_level, recommendations
+
+
 if menu == get_text("menu_dashboard", global_lang):
-    st.subheader("💹 " + get_text("market_dashboard", global_lang))
-
+    st.subheader("🌾 " + get_text("farm_intelligence_center", global_lang))
+    st.write("📊 Your personalized farm decision support system")
+    
     # Load price data
-    df_prices = pd.read_csv('agmarknet_prices.csv')
-
-    # Get top 10 commodities by modal price
-    top_commodities = df_prices.nlargest(10, 'Modal_x0020_Price')[['Commodity', 'Modal_x0020_Price', 'State', 'Market', 'District']].drop_duplicates(subset=['Commodity'])
-
-    st.write(f"### {get_text('top_commodities', global_lang)}")
-    for i, (_, row) in enumerate(top_commodities.iterrows(), 1):
-        st.write(f"{i}. **{row['Commodity']}** - ₹{int(row['Modal_x0020_Price'])} ({row['Market']}, {row['District']}, {row['State']})")
-
-    st.write(f"### {get_text('market_insights', global_lang)}")
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric(get_text("total_commodities", global_lang), len(df_prices['Commodity'].unique()))
-    with col2:
-        st.metric(get_text("avg_price", global_lang), f"₹{int(df_prices['Modal_x0020_Price'].mean())}")
-    with col3:
-        st.metric(get_text("states_covered", global_lang), len(df_prices['State'].unique()))
-
-    st.write(f"### {get_text('price_trends', global_lang)}")
-    st.bar_chart(df_prices.groupby('Commodity')['Modal_x0020_Price'].mean().nlargest(10))
+    try:
+        df_prices = pd.read_csv('agmarknet_prices.csv')
+        
+        # Get analysis data
+        trends = analyze_price_trends(df_prices)
+        
+        # === 1. TODAY'S DECISION PANEL (HERO SECTION) ===
+        st.markdown("### 🎯 Today's Decision")
+        
+        # Get weather if available
+        weather_data = None
+        try:
+            weather_data, _ = get_weather("Delhi")  # Default city
+        except:
+            pass
+        
+        action_level, decisions = get_decision_recommendation(trends, weather_data)
+        
+        # Decision banner
+        decision_color = "#28a745" if action_level == "🟢" else "#ffc107" if action_level == "🟡" else "#dc3545"
+        st.markdown(f"""
+        <div style="background-color: {decision_color}; padding: 20px; border-radius: 10px; margin: 10px 0; text-align: center;">
+            <h2 style="color: white; margin: 0;">{action_level} Farm Status: {action_level.replace('🟢', 'SAFE').replace('🟡', 'CAUTION').replace('🔴', 'ALERT')}</h2>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Decision details
+        for decision in decisions:
+            st.write(decision)
+        
+        st.markdown("---")
+        
+        # === 2. BEST & WORST CROPS TODAY ===
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("### 🏆 Best Performing Crops")
+            top_crops = df_prices.nlargest(5, 'Modal_x0020_Price')[['Commodity', 'Modal_x0020_Price']].drop_duplicates(subset=['Commodity'])
+            for i, (_, row) in enumerate(top_crops.iterrows(), 1):
+                trend = trends.get(row['Commodity'], "→ stable")
+                st.write(f"{i}. **{row['Commodity']}** - ₹{int(row['Modal_x0020_Price'])} {trend}")
+        
+        with col2:
+            st.markdown("### ⚠️ Crops Needing Attention")
+            low_crops = df_prices.nsmallest(5, 'Modal_x0020_Price')[['Commodity', 'Modal_x0020_Price']].drop_duplicates(subset=['Commodity'])
+            for i, (_, row) in enumerate(low_crops.iterrows(), 1):
+                trend = trends.get(row['Commodity'], "→ stable")
+                st.write(f"{i}. **{row['Commodity']}** - ₹{int(row['Modal_x0020_Price'])} {trend}")
+        
+        st.markdown("---")
+        
+        # === 3. PRICE DIRECTION INDICATORS ===
+        st.markdown("### 📈 Price Direction (Next 7 Days)")
+        
+        # Create columns for direction indicators
+        cols = st.columns(5)
+        for i, (crop, trend) in enumerate(list(trends.items())[:5]):
+            with cols[i % 5]:
+                if "↑" in trend:
+                    color = "#28a745"
+                    emoji = "⬆️"
+                elif "↓" in trend:
+                    color = "#dc3545"
+                    emoji = "⬇️"
+                else:
+                    color = "#6c757d"
+                    emoji = "➡️"
+                st.markdown(f"""
+                <div style="background-color: {color}; padding: 10px; border-radius: 5px; text-align: center; color: white;">
+                    <div style="font-size: 24px;">{emoji}</div>
+                    <div>{crop}</div>
+                    <div style="font-size: 12px;">{trend}</div>
+                </div>
+                """, unsafe_allow_html=True)
+        
+        st.markdown("---")
+        
+        # === 4. RISK OVERLAY ===
+        st.markdown("### 🌤️ Weather Risk Assessment")
+        
+        if weather_data:
+            temp = weather_data.get('temperature', 0)
+            humidity = weather_data.get('humidity', 0)
+            description = weather_data.get('description', '').lower()
+            
+            # Risk calculation
+            risk_level = "LOW"
+            risk_color = "#28a745"
+            
+            if temp > 40 or humidity > 85:
+                risk_level = "HIGH"
+                risk_color = "#dc3545"
+            elif temp > 35 or humidity > 70:
+                risk_level = "MEDIUM"
+                risk_color = "#ffc107"
+            
+            st.markdown(f"""
+            <div style="background-color: {risk_color}; padding: 15px; border-radius: 10px; margin: 10px 0;">
+                <h3 style="color: white; margin: 0;">🌡️ {temp}°C | 💧 {humidity}% | {description.title()}</h3>
+                <p style="color: white; margin: 5px 0;">Risk Level: {risk_level}</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Crop-specific risk
+            st.markdown("### 🌾 Crop Risk Status")
+            crops_to_check = ["Rice", "Wheat", "Tomato", "Potato", "Cotton", "Maize"]
+            for crop in crops_to_check[:4]:
+                risk, desc = get_crop_risk_score(crop, humidity, temp)
+                st.write(f"**{crop}:** {risk} - {desc}")
+        else:
+            st.info("Weather data unavailable. Configure API for personalized risk assessment.")
+        
+        st.markdown("---")
+        
+        # === 5. SMART RECOMMENDATIONS ===
+        st.markdown("### 💡 Smart Recommendations")
+        
+        # Generate recommendations based on analysis
+        smart_recs = []
+        
+        # Price-based recommendation
+        if increasing > decreasing:
+            smart_recs.append("🌾 **Crop:** Hold wheat/rice stocks - prices expected to rise")
+        else:
+            smart_recs.append("🌾 **Crop:** Consider selling wheat/rice soon - prices may peak")
+        
+        # Weather-based recommendation
+        if weather_data:
+            if weather_data.get('rainfall', 0) < 5:
+                smart_recs.append("💧 **Irrigation:** Increase watering - low rainfall expected")
+            elif weather_data.get('rainfall', 0) > 15:
+                smart_recs.append("💧 **Irrigation:** Skip irrigation - natural rainfall sufficient")
+            
+            if weather_data.get('humidity', 0) > 75:
+                smart_recs.append("🍄 **Disease:** High humidity - monitor crops for fungal diseases")
+        
+        # General recommendation
+        smart_recs.append("📊 **Action:** Review crop recommendations for next season")
+        
+        for rec in smart_recs:
+            st.write(rec)
+        
+        st.markdown("---")
+        
+        # === 6. ALERTS SECTION ===
+        st.markdown("### ⚠️ Active Alerts")
+        
+        alerts = []
+        
+        # Check for price alerts
+        if decreasing > increasing:
+            alerts.append(("🔴", "Price drop alert for multiple crops - consider early selling"))
+        
+        # Check for weather alerts
+        if weather_data:
+            if weather_data.get('temperature', 0) > 38:
+                alerts.append(("🟡", "Heat alert - protect sensitive crops"))
+            if weather_data.get('rainfall', 0) > 25:
+                alerts.append(("🟡", "Heavy rain alert - ensure proper drainage"))
+        
+        # Check for disease alerts
+        if weather_data and weather_data.get('humidity', 0) > 75:
+            alerts.append(("🟡", "Disease alert - high humidity favors fungal growth"))
+        
+        if alerts:
+            for alert_emoji, alert_msg in alerts:
+                st.warning(f"{alert_emoji} {alert_msg}")
+        else:
+            st.success("✅ No active alerts - All systems normal")
+        
+        st.markdown("---")
+        
+        # === QUICK STATS ===
+        st.markdown("### 📊 Quick Stats")
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.metric("Total Commodities", len(df_prices['Commodity'].unique()))
+        with col2:
+            st.metric("Avg Price", f"₹{int(df_prices['Modal_x0020_Price'].mean())}")
+        with col3:
+            st.metric("States Covered", len(df_prices['State'].unique()))
+        with col4:
+            st.metric("Markets Tracked", len(df_prices['Market'].unique()))
+            
+    except FileNotFoundError:
+        st.warning("⚠️ Price data not available. Please ensure agmarknet_prices.csv exists.")
+        st.info("Run the price forecasting module first to fetch the latest market data.")
+    
+    # Fallback for demo mode
+    if not 'df_prices' in locals() or df_prices is None:
+        st.markdown("### 📊 Demo Dashboard")
+        
+        # Demo decision panel
+        st.markdown("""
+        <div style="background-color: #28a745; padding: 20px; border-radius: 10px; margin: 10px 0; text-align: center;">
+            <h2 style="color: white; margin: 0;">🟢 Farm Status: SAFE</h2>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.write("➡️ Prices relatively STABLE - No immediate action needed")
+        
+        st.markdown("### 🏆 Best Performing Crops")
+        st.write("1. **Cotton** - ₹6,200 ⬆️ increasing")
+        st.write("2. **Rice** - ₹2,400 → stable")
+        st.write("3. **Tomato** - ₹2,100 ⬆️ increasing")
+        
+        st.markdown("### ⚠️ Crops Needing Attention")
+        st.write("1. **Onion** - ₹1,800 ↓ decreasing")
+        st.write("2. **Potato** - ₹1,400 → stable")
+        
+        st.markdown("### 💡 Smart Recommendations")
+        st.write("🌾 **Crop:** Hold rice stocks - prices expected to rise")
+        st.write("💧 **Irrigation:** Skip irrigation - natural rainfall sufficient")
+        
+        st.markdown("### ⚠️ Active Alerts")
+        st.success("✅ No active alerts - All systems normal")
 
 # ---------------------------
 # Crop Recommendation
