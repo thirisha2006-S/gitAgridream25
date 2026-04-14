@@ -82,8 +82,12 @@ def recommend_crop(N, P, K, temperature, humidity, ph, rainfall, state):
 
 # Weather function
 def get_weather(city):
-    api_key = os.getenv('OPENWEATHER_API_KEY', '21e959d85a5148fdd18fbb293869d9ef')  # Demo key
-    if not api_key or api_key == 'your_openweather_key_here':
+    # Use hardcoded API key as primary, with fallback to env variable
+    api_key = os.getenv('OPENWEATHER_API_KEY')
+    if not api_key or api_key in ['your_openweather_key_here', 'demo_key']:
+        api_key = '21e959d85a5148fdd18fbb293869d9ef'
+    
+    if not api_key:
         return None, "API key not configured"
 
     try:
@@ -96,11 +100,15 @@ def get_weather(city):
                 'temperature': data['main']['temp'],
                 'humidity': data['main']['humidity'],
                 'description': data['weather'][0]['description'],
-                'rainfall': data.get('rain', {}).get('1h', 0)  # Last hour rainfall
+                'rainfall': data.get('rain', {}).get('1h', 0)
             }
             return weather, None
         else:
             return None, data.get('message', 'Weather data not available')
+    except requests.exceptions.Timeout:
+        return None, "Connection timeout - please try again"
+    except requests.exceptions.ConnectionError:
+        return None, "No internet connection - please check your network"
     except Exception as e:
         return None, str(e)
 
@@ -2285,7 +2293,8 @@ elif menu == get_text("menu_weather", global_lang):
     city = st.text_input(get_text("enter_city", global_lang), "Delhi")
 
     if st.button(get_text("get_weather", global_lang)):
-        weather, error = get_weather(city)
+        with st.spinner("Fetching weather data..."):
+            weather, error = get_weather(city)
         if weather:
             temp = weather.get('temperature', 0)
             humidity = weather.get('humidity', 0)
@@ -2431,8 +2440,10 @@ elif menu == get_text("menu_weather", global_lang):
             """, unsafe_allow_html=True)
             
         else:
-            st.error(get_text("unable_weather", global_lang))
-            st.info(get_text("check_connection", global_lang))
+            st.error(f"Unable to fetch weather: {error}")
+            st.info("Please check your internet connection and try again.")
+            # Show sample data for testing
+            st.info("💡 Tip: Make sure you have an internet connection and try entering a valid city name.")
 
 # ---------------------------
 # Disease Detection using Plant.id API or Pl@ntNet API or Local TensorFlow
