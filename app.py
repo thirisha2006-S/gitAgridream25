@@ -2068,6 +2068,10 @@ if menu == get_text("menu_dashboard", global_lang):
         # Generate recommendations based on analysis
         smart_recs = []
         
+        # Calculate trend counts
+        increasing = sum(1 for v in trends.values() if "increasing" in v)
+        decreasing = sum(1 for v in trends.values() if "decreasing" in v)
+        
         # Price-based recommendation
         if increasing > decreasing:
             smart_recs.append("🌾 **Crop:** Hold wheat/rice stocks - prices expected to rise")
@@ -2096,6 +2100,11 @@ if menu == get_text("menu_dashboard", global_lang):
         st.markdown("### ⚠️ Active Alerts")
         
         alerts = []
+        
+        # Calculate trend counts (already done above - reuse)
+        if 'increasing' not in dir():
+            increasing = sum(1 for v in trends.values() if "increasing" in v)
+            decreasing = sum(1 for v in trends.values() if "decreasing" in v)
         
         # Check for price alerts
         if decreasing > increasing:
