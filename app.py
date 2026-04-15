@@ -4882,10 +4882,40 @@ elif menu == get_text("menu_emotion", global_lang):
                 emergency_msg = f"🚨 URGENT: Farmer {farmer_name} may need immediate emotional support. Please check on them. - AgriCare AI"
                 
                 # Show alert in app
-                st.error(f"🚨 Emergency Alert Sent to Family Members: {emergency_msg}")
+                st.error(f"🚨 Emergency Alert Sent to Family Members!")
                 
-                # In production, integrate with WhatsApp/SMS API here
-                # For now, store alert in database
+                # Send WhatsApp messages via CallMeBot
+                callmebot_api_key = os.getenv('CALLMEBOT_API_KEY')
+                
+                if callmebot_api_key and callmebot_api_key != 'your_callmebot_api_key_here':
+                    try:
+                        # Send to family1
+                        if family1.get('phone'):
+                            phone = family1['phone'].replace('+', '').replace(' ', '')
+                            url = f"https://api.callmebot.com/whatsapp.php?phone={phone}&text={requests.utils.quote(emergency_msg)}&apikey={callmebot_api_key}"
+                            response = requests.get(url, timeout=10)
+                            if response.status_code == 200:
+                                st.success(f"✅ WhatsApp sent to {family1.get('name', 'Family 1')}")
+                            else:
+                                print(f"WhatsApp failed: {response.text}")
+                        
+                        # Send to family2
+                        if family2.get('phone'):
+                            phone = family2['phone'].replace('+', '').replace(' ', '')
+                            url = f"https://api.callmebot.com/whatsapp.php?phone={phone}&text={requests.utils.quote(emergency_msg)}&apikey={callmebot_api_key}"
+                            response = requests.get(url, timeout=10)
+                            if response.status_code == 200:
+                                st.success(f"✅ WhatsApp sent to {family2.get('name', 'Family 2')}")
+                            else:
+                                print(f"WhatsApp failed: {response.text}")
+                                
+                    except Exception as e:
+                        print(f"WhatsApp error: {e}")
+                        st.warning("⚠️ Could not send WhatsApp. Check API configuration.")
+                else:
+                    st.info("💡 Configure CALLMEBOT_API_KEY in .env to enable WhatsApp alerts")
+                
+                # Log in database
                 try:
                     if family1.get('phone'):
                         print(f"Would send to {family1.get('name')}: {emergency_msg}")
