@@ -2998,9 +2998,9 @@ elif menu == get_text("menu_price", global_lang):
             marker=dict(size=6)
         ))
         
-        # Add current price line
-        fig.add_hline(y=current_price, line_dash="dash", line_color="gray", 
-                      annotation=f"Current: ₹{current_price}")
+        # Add current price reference line
+        fig.add_shape(type="line", x0=0, x1=34, y0=current_price, y1=current_price,
+                      line=dict(color="gray", width=2, dash="dash"))
         
         fig.update_layout(
             xaxis_title="Days from Now",
