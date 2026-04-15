@@ -4792,42 +4792,47 @@ elif menu == get_text("menu_emotion", global_lang):
         if not all_messages:
             st.info(f"👋 Namaste, {farmer_name}! Ask me about farming or share how you're feeling.")
         
-        # Chat display
-        chat_container = st.container(height=350)
-        with chat_container:
-            for chat in all_messages[-20:]:
-                timestamp = chat.get('timestamp', datetime.now())
-                if isinstance(timestamp, str):
-                    timestamp = datetime.fromisoformat(timestamp)
-                time_str = timestamp.strftime("%H:%M")
-                
-                emotion = chat.get('emotion', 'happy')
-                emoji = {"happy": "😊", "sad": "😔", "angry": "😠", "high_risk": "🚨"}.get(emotion, "💚")
-                
-                # User message
-                st.markdown(f"**You:** {chat['user']}")
-                
-                # Bot response
-                st.markdown(f"{emoji} **AgriCare AI:** {chat['bot']}")
-                st.caption(time_str)
-                st.markdown("---")
-        
-        # Input area with form to support Enter key
-        st.markdown("**Type your message:**")
-        
-        with st.form("agri_chat_form", clear_on_submit=True):
-            user_input = st.text_input(
-                "Message", 
-                placeholder="Ask about farming or share how you feel...",
-                key="agri_msg_input",
-                label_visibility="collapsed"
-            )
+        # Chat display - free flow style
+        for chat in all_messages[-20:]:
+            timestamp = chat.get('timestamp', datetime.now())
+            if isinstance(timestamp, str):
+                timestamp = datetime.fromisoformat(timestamp)
+            time_str = timestamp.strftime("%H:%M")
             
-            col_send, col_clear = st.columns([1, 1])
-            with col_send:
-                submit_btn = st.form_submit_button("📤 Send", type="primary")
-            with col_clear:
-                clear_btn = st.form_submit_button("🗑️ Clear")
+            emotion = chat.get('emotion', 'happy')
+            emoji = {"happy": "😊", "sad": "😔", "angry": "😠", "high_risk": "🚨"}.get(emotion, "💚")
+            
+            # User message (right side, green)
+            st.markdown(f"""
+            <div style="display: flex; justify-content: flex-end; margin: 8px 0;">
+                <div style="background: #DCF8C6; padding: 10px 15px; border-radius: 15px 15px 5px 15px; max-width: 80%;">
+                    {chat['user']}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Bot message (left side, white)
+            st.markdown(f"""
+            <div style="display: flex; justify-content: flex-start; margin: 8px 0;">
+                <div style="background: white; border: 1px solid #ddd; padding: 10px 15px; border-radius: 15px 15px 15px 5px; max-width: 80%;">
+                    <span style="font-size: 12px;">{emoji} </span>{chat['bot']}
+                    <div style="font-size: 10px; color: #999; margin-top: 3px;">{time_str}</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # Input area - chat style
+        with st.form("agri_chat_form", clear_on_submit=True):
+            col_input, col_btn = st.columns([5, 1])
+            with col_input:
+                user_input = st.text_input(
+                    "Type a message...", 
+                    placeholder="Ask me anything about farming...",
+                    key="agri_msg_input",
+                    label_visibility="collapsed"
+                )
+            with col_btn:
+                submit_btn = st.form_submit_button("📤", help="Send")
         
         # Handle form submission
         if submit_btn and user_input.strip():
