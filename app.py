@@ -4909,6 +4909,8 @@ elif menu == get_text("menu_emergency", global_lang):
 # ============================================================
 # 🎙️ VOICE ASSISTANT
 # ============================================================
+# 🎙️ VOICE ASSISTANT
+# ============================================================
 elif menu == "🎙️ Voice Assistant":
     st.markdown("""
     <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 15px; margin: 10px 0;">
