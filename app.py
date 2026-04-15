@@ -4850,18 +4850,42 @@ elif menu == get_text("menu_emotion", global_lang):
             if not bot_response:
                 bot_response = get_chatgpt_style_fallback(detected_emotion, global_lang, farmer_profile, user_input, st.session_state.emotion_messages)
             
+            # Save to session state (for display)
             st.session_state.emotion_messages.append({
                 "user": user_input,
                 "bot": bot_response,
                 "emotion": detected_emotion,
                 "timestamp": datetime.now()
             })
+            
+            # Save to database (permanent storage)
+            try:
+                farmer_id = st.session_state.get('current_farmer_id', 1)
+                database.save_chat_message(
+                    farmer_id=farmer_id,
+                    user_message=user_input,
+                    bot_response=bot_response,
+                    emotion=detected_emotion,
+                    language=global_lang
+                )
+            except Exception as e:
+                print(f"Error saving chat to database: {e}")
+            
             st.rerun()
         
-        # Handle clear
-        if clear_btn:
+        # Clear chat button
+        if st.button("🗑️ Clear Chat"):
+            # Clear session state
             st.session_state.agri_history = []
             st.session_state.emotion_messages = []
+            
+            # Clear database
+            try:
+                farmer_id = st.session_state.get('current_farmer_id', 1)
+                database.clear_chat_history(farmer_id)
+            except Exception as e:
+                print(f"Error clearing chat from database: {e}")
+            
             st.rerun()
     
     # Right sidebar

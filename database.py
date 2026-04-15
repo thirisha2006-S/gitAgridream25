@@ -42,6 +42,20 @@ def create_tables():
     try:
         cursor = conn.cursor()
         
+        # Chat History Table for AgriCare AI
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS chat_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                farmer_id INTEGER,
+                user_message TEXT NOT NULL,
+                bot_response TEXT NOT NULL,
+                emotion TEXT,
+                language TEXT DEFAULT 'English',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (farmer_id) REFERENCES farmers(id)
+            )
+        """)
+        
         # Farmers Table (ENHANCED - Context Aware)
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS farmers (
@@ -819,6 +833,75 @@ def test_database():
     stats = get_database_stats()
     print(f"Database stats: {stats}")
     print("All enhanced tests passed!")
+
+
+# ============================================================
+# Chat History Functions for AgriCare AI
+# ============================================================
+
+def save_chat_message(farmer_id: int, user_message: str, bot_response: str, emotion: str = None, language: str = "English") -> int:
+    """Save a chat message to the database."""
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO chat_history (farmer_id, user_message, bot_response, emotion, language)
+            VALUES (?, ?, ?, ?, ?)
+        """, (farmer_id, user_message, bot_response, emotion, language))
+        conn.commit()
+        return cursor.lastrowid
+    except sqlite3.Error as e:
+        print(f"Error saving chat message: {e}")
+        return -1
+    finally:
+        conn.close()
+
+
+def get_chat_history(farmer_id: int, limit: int = 50) -> List[Dict]:
+    """Retrieve chat history for a farmer."""
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT * FROM chat_history 
+            WHERE farmer_id = ?
+            ORDER BY created_at DESC
+            LIMIT ?
+        """, (farmer_id, limit))
+        
+        rows = cursor.fetchall()
+        return [
+            {
+                "id": row["id"],
+                "farmer_id": row["farmer_id"],
+                "user": row["user_message"],
+                "bot": row["bot_response"],
+                "emotion": row["emotion"],
+                "language": row["language"],
+                "timestamp": row["created_at"]
+            }
+            for row in rows
+        ]
+    except sqlite3.Error as e:
+        print(f"Error retrieving chat history: {e}")
+        return []
+    finally:
+        conn.close()
+
+
+def clear_chat_history(farmer_id: int) -> bool:
+    """Clear chat history for a farmer."""
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM chat_history WHERE farmer_id = ?", (farmer_id,))
+        conn.commit()
+        return True
+    except sqlite3.Error as e:
+        print(f"Error clearing chat history: {e}")
+        return False
+    finally:
+        conn.close()
 
 
 if __name__ == "__main__":
