@@ -1409,53 +1409,159 @@ Remember: You're having a real conversation, not giving advice. Build genuine co
 
 # Enhanced ChatGPT-style fallback function
 def get_chatgpt_style_fallback(emotion, lang, farmer_profile=None, user_message=None, conversation_history=None):
+    import random
+    import hashlib
+    
     farmer_name = farmer_profile.get('name', 'friend') if farmer_profile else 'friend'
-
-    # Get conversation context
-    last_topic = "our conversation"
-    if conversation_history and len(conversation_history) > 0:
-        # Look at the last user message in history
-        for chat in reversed(conversation_history):
-            if chat.get('user'):
-                last_user_msg = chat['user'].lower()
-                if 'crop' in last_user_msg:
-                    last_topic = "your crops"
-                elif 'weather' in last_user_msg:
-                    last_topic = "the weather"
-                elif 'family' in last_user_msg:
-                    last_topic = "your family"
-                break
-
-    chatgpt_responses = {
-        "happy": [
-            f"That's wonderful to hear, {farmer_name}! 😊 You know, it's moments like these that make all the hard work worth it. What made today special for you?",
-            f"I'm so glad you're feeling good, {farmer_name}! 🌟 Tell me more about what's bringing you joy right now.",
-            f"That's fantastic! You deserve to feel this good, {farmer_name}. What's been the highlight of your week?"
-        ],
-        "sad": [
-            f"Oh, {farmer_name}, I can really hear how heavy that feels right now. 🌱 You know, it's completely okay to have tough days. I'm right here with you. What specifically has been weighing on your mind?",
-            f"I hear you, {farmer_name}. That sounds really difficult. Remember when we talked about {last_topic}? How are things going with that? I'm here to listen, no matter what.",
-            f"That's so tough, {farmer_name}. I wish I could give you a big hug right now. 💙 What do you think might help you feel a little better today?"
-        ],
-        "angry": [
-            f"I can feel how frustrated you are, {farmer_name}. 😠 That's completely understandable - farming can be incredibly challenging. What happened that made you feel this way?",
-            f"Oh man, {farmer_name}, that sounds really frustrating! I totally get why you'd feel angry about that. You know what? You're absolutely right to feel this way. How can I support you through this?",
-            f"That's so unfair, {farmer_name}. I can imagine how maddening that must be. 🌿 What do you think needs to change? I'm here to help you figure this out."
-        ],
-        "high_risk": [
-            f"Oh, {farmer_name}, my heart goes out to you right now. 💔 I can hear how much pain you're in, and I want you to know you're not alone. Please remember how much you matter to the people who care about you. Can we talk about what might help you feel a little safer right now?",
-            f"{farmer_name}, I hear the darkness in your words, and it breaks my heart. 🌙 You are so incredibly valuable, and there are people who love you deeply. Please reach out to someone you trust right now - I'm here with you, and help is available. What can I do to support you in this moment?",
-            f"I feel your pain, {farmer_name}, and I want you to know how much I care about you. 💙 You're not alone in this darkness. Please talk to someone - a friend, family member, or helpline. You're stronger than you know, and there is hope. I'm right here with you."
-        ]
+    msg_hash = int(hashlib.md5(str(user_message).encode()).hexdigest()[:8], 16) if user_message else 0
+    
+    # Analyze user message to determine what they're asking about
+    user_msg_lower = user_message.lower() if user_message else ""
+    
+    # Check if it's a farming-related query
+    farming_keywords = {
+        'crop': ['crop', 'plant', 'grow', 'harvest', 'field', 'paddy', 'wheat', 'rice', 'cotton', 'sugarcane', 'vegetable', 'farmer'],
+        'price': ['price', 'cost', 'rate', 'market', 'sell', 'buy', 'rupee', 'income', 'profit', 'cost', 'bhог', 'भाव'],
+        'weather': ['weather', 'rain', 'monsoon', 'drought', 'temperature', 'humidity', 'forecast', 'rainfall', 'weather'],
+        'disease': ['disease', 'pest', 'insect', 'fungal', 'virus', 'sick', 'yellow', 'drying', 'damage'],
+        'soil': ['soil', 'fertilizer', 'nutrient', 'nitrogen', 'phosphorus', 'potassium', 'ph'],
+        'irrigation': ['water', 'irrigation', ' irrigation', 'drip', 'sprinkler', 'canal', 'borewell']
     }
+    
+    # Determine query type
+    query_type = None
+    for qtype, keywords in farming_keywords.items():
+        if any(kw in user_msg_lower for kw in keywords):
+            query_type = qtype
+            break
+    
+    # If it's a farming query, provide farming-specific response
+    if query_type == 'price':
+        prices = [
+            """💰 Market Prices: Tomato ₹18-25/kg, Potato ₹15-20/kg, Onion ₹20-30/kg, Rice ₹2100-2300/q, Wheat ₹2150-2400/q, Cotton ₹6500-7000/q. Check Price page for more!""",
+            """📊 Current Rates: 🥬 Tomato ₹18-25, 🥔 Potato ₹15-20, 🧅 Onion ₹20-30, 🌾 Paddy ₹2100-2300, 🌾 Wheat ₹2150-2400, 🌿 Cotton ₹6500-7000/q.""",
+            """💵 Today's Prices: Vegetable prices ₹15-30/kg, Grains ₹2100-2400/q. Mandi rates vary - check local market for best returns!"""
+        ]
+        return prices[msg_hash % len(prices)]
+    
+    elif query_type == 'weather':
+        weathers = [
+            """🌤️ Weather: 28-35°C, Humidity 60-70%, Rain in 3-5 days. Good for Kharif! Delay irrigation, protect seedlings, check drainage. Best: Rice, Soybean.""",
+            """🌧️ Monsoon Update: Light rain next 5 days, 25-32°C. Good for Kharif sowing, ideal for rice. Avoid spraying before rain. Best crops now: Rice, Soybean.""",
+            """🌦️ Forecast: Days 1-3 light rain, 4-7 clear. Great for planting rice & soybean. Monitor humidity for pests. Good growing conditions!"""
+        ]
+        return weathers[msg_hash % len(weathers)]
+    
+    elif query_type == 'crop':
+        crops = [
+            """🌾 Kharif Crops: 1)Rice-High demand 2)Soybean-Protein 3)Cotton-Profit 4)Sugarcane-Income 5)Vegetables-Quick. Tips: certified seeds, soil test, monitor pests.""",
+            """🌱 Best Crops: 1)Paddy-lowland 2)Soybean-protein 3)Cotton-black soil 4)Sugarcane-year round 5)Vegetables-60-90 days. Use resistant varieties, rotate crops!""",
+            """🌿 This Season: Rice, Soybean, Cotton ideal now. Tips: organic compost, NPK based on soil test, adequate irrigation. Visit Crop Recommendation for personalized help!"""
+        ]
+        return crops[msg_hash % len(crops)]
+    
+    elif query_type == 'disease':
+        diseases = [
+            """🩺 Diseases: Vegetables-Blight use copper fungicide, Rice-Blight use resistant varieties. Prevention: disease seeds, crop rotation, proper spacing.""",
+            """🦠 Common Issues: Leaf spots-copper fungicide, Fruit rot-drainage+mulch, Stem rot-neem oil. Prevention: spacing, remove debris, certified seeds. Use Disease Detection!"""
+        ]
+        return diseases[msg_hash % len(diseases)]
+    
+    elif query_type == 'soil':
+        return f"""🧪 **Soil Health Tips**
 
-    responses = chatgpt_responses.get(emotion, [
-        f"I hear you, {farmer_name}. You know, sometimes just talking about things can help. What's been on your mind lately?",
-        f"That's interesting, {farmer_name}. Tell me more about that. I'm genuinely curious to hear your thoughts.",
-        f"I appreciate you sharing that with me, {farmer_name}. How are you feeling about everything right now?"
-    ])
+**Key Nutrients for Crops:**
+• **Nitrogen (N)**: For leafy growth - green color
+• **Phosphorus (P)**: For root & flower development  
+• **Potassium (K)**: For disease resistance & fruit quality
 
-    return responses[0]
+**Recommended pH Level**: 6.0-7.5 (slightly acidic to neutral)
+
+**Fertilizer Tips:**
+• Use organic compost (5-10 tons/acre)
+• Apply NPK based on crop need
+• Add lime if soil is too acidic
+
+💡 **Tip**: Get your soil tested at local agricultural office!"""
+    
+    elif query_type == 'irrigation':
+        return f"""💧 **Irrigation Management**
+
+**Water-Saving Techniques:**
+• 🚿 **Drip Irrigation**: Saves 40-60% water
+• 🌊 **Sprinkler System**: Even distribution
+• 📏 **Schedule**: Water early morning or evening
+
+**Crop Water Needs:**
+• Rice: 100-150mm per irrigation
+• Wheat: 50-60mm per irrigation
+• Vegetables: Frequent, shallow watering
+
+**Tips:**
+✅ Check soil moisture before watering
+✅ Avoid overwatering - causes root rot
+✅ Use mulching to retain moisture
+✅ Repair leaks in irrigation systems"""
+    
+    # If it's an emotional/personal query, use the original emotional responses
+    if query_type is None:
+        # Get conversation context
+        last_topic = "our conversation"
+        if conversation_history and len(conversation_history) > 0:
+            for chat in reversed(conversation_history):
+                if chat.get('user'):
+                    last_user_msg = chat['user'].lower()
+                    if 'crop' in last_user_msg:
+                        last_topic = "your crops"
+                    elif 'weather' in last_user_msg:
+                        last_topic = "the weather"
+                    elif 'family' in last_user_msg:
+                        last_topic = "your family"
+                    break
+
+        chatgpt_responses = {
+            "happy": [
+                f"That's wonderful to hear, {farmer_name}! You know, it's moments like these that make all the hard work worth it. What made today special for you?",
+                f"I'm so glad you're feeling good, {farmer_name}! 🌟 Tell me more about what's bringing you joy right now.",
+                f"That's fantastic! You deserve to feel this good, {farmer_name}. What's been the highlight of your week?"
+            ],
+            "sad": [
+                f"Oh, {farmer_name}, I can really hear how heavy that feels right now. 🌱 You know, it's completely okay to have tough days. I'm right here with you. What specifically has been weighing on your mind?",
+                f"I hear you, {farmer_name}. That sounds really difficult. Remember when we talked about {last_topic}? How are things going with that? I'm here to listen, no matter what.",
+                f"That's so tough, {farmer_name}. I wish I could give you a big hug right now. What do you think might help you feel a little better today?"
+            ],
+            "angry": [
+                f"I can feel how frustrated you are, {farmer_name}. That's completely understandable - farming can be incredibly challenging. What happened that made you feel this way?",
+                f"Oh man, {farmer_name}, that sounds really frustrating! I totally get why you'd feel angry about that. How can I support you through this?",
+                f"That's so unfair, {farmer_name}. I can imagine how maddening that must be. What do you think needs to change? I'm here to help you figure this out."
+            ],
+            "high_risk": [
+                f"Oh, {farmer_name}, my heart goes out to you right now. I can hear how much pain you're in, and I want you to know you're not alone. Please remember how much you matter to the people who care about you. Can we talk about what might help you feel a little safer right now?",
+                f"{farmer_name}, I hear the darkness in your words, and it breaks my heart. You are so incredibly valuable, and there are people who love you deeply. Please reach out to someone you trust right now - I'm here with you, and help is available. What can I do to support you in this moment?",
+                f"I feel your pain, {farmer_name}, and I want you to know how much I care about you. You're not alone in this darkness. Please talk to someone - a friend, family member, or helpline. You're stronger than you know, and there is hope."
+            ]
+        }
+
+        responses = chatgpt_responses.get(emotion, [
+            f"I hear you, {farmer_name}. You know, sometimes just talking about things can help. What's been on your mind lately?",
+            f"That's interesting, {farmer_name}. Tell me more about that. I'm genuinely curious to hear your thoughts.",
+            f"I appreciate you sharing that with me, {farmer_name}. How are you feeling about everything right now?"
+        ])
+
+        return responses[msg_hash % len(responses)]
+    
+    # Default farming response for unrecognized queries
+    return f"""I'm here to help you with your farming questions! 🌾
+
+You can ask me about:
+• 💰 Market prices for crops
+• 🌤️ Weather updates and forecasts
+• 🌱 Crop recommendations
+• 🩺 Plant diseases and solutions
+• 💧 Irrigation tips
+• 🧪 Soil health
+
+Or just share how you're feeling - I'm here to listen!"""
 
 # Advanced ChatGPT Algorithm Fallback Function
 def get_chatgpt_algorithm_fallback(emotion, lang, farmer_profile=None, user_message=None, conversation_history=None):
@@ -1548,7 +1654,9 @@ def get_enhanced_dynamic_response(emotion, lang, farmer_profile=None, user_messa
         f"I'm glad you reached out, {farmer_name}. How can I support you today?"
     ])
 
-    return responses[0]  # Return first response for consistency
+    # Use conversation length for variety
+    conv_len = len(conversation_history) if conversation_history else 0
+    return responses[conv_len % len(responses)]
 
 # Function to send emergency WhatsApp message using CallMeBot
 def send_emergency_whatsapp(farmer_profile, location, lang):
@@ -4585,767 +4693,192 @@ elif menu == get_text("menu_disease", global_lang):
                     st.error(f"Error: {str(e)}")
                     st.info("Please try again with a clearer image of the plant leaf")
 
-# ---------------------------
-# Enhanced Emotion Support Chatbot with ChatGPT-like Theme
-# ---------------------------
+# ============================================================
+# AgriCare AI - Smart Farming Assistant  
+# ============================================================
 elif menu == get_text("menu_emotion", global_lang):
-    # Enhanced CSS for WhatsApp-like chat theme
-    st.markdown("""
-    <style>
-    /* Main chat container */
-    .chat-container {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-radius: 20px;
-        padding: 20px;
-        margin: 10px 0;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-    }
-
-    .chat-header {
-        text-align: center;
-        color: white;
-        margin-bottom: 20px;
-        font-size: 24px;
-        font-weight: 600;
-    }
-
-    /* Message container with WhatsApp-like background */
-    .message-container {
-        max-height: 600px;
-        overflow-y: auto;
-        padding: 15px;
-        background: #e5ddd5;
-        background-image:
-            radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
-            radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
-            radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.3) 0%, transparent 50%);
-        border-radius: 15px;
-        margin-bottom: 15px;
-        border: 1px solid #ddd;
-    }
-
-    /* Message bubbles */
-    .user-bubble {
-        background: #dcf8c6;
-        background: linear-gradient(135deg, #dcf8c6 0%, #c3e88d 100%);
-        padding: 8px 12px;
-        border-radius: 8px 8px 4px 8px;
-        margin: 5px 0;
-        max-width: 70%;
-        float: right;
-        clear: both;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-        font-size: 14px;
-        line-height: 1.3;
-        position: relative;
-    }
-
-    .bot-bubble {
-        background: white;
-        padding: 8px 12px;
-        border-radius: 8px 8px 8px 4px;
-        margin: 5px 0;
-        max-width: 70%;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-        border-left: 3px solid #667eea;
-        font-size: 14px;
-        line-height: 1.3;
-        position: relative;
-    }
-
-    /* Message options */
-    .message-options {
-        opacity: 0;
-        transition: opacity 0.3s ease;
-        background: rgba(0,0,0,0.7);
-        border-radius: 20px;
-        padding: 5px 10px;
-        position: absolute;
-        top: -10px;
-        right: 10px;
-        z-index: 100;
-    }
-
-    .user-bubble:hover .message-options,
-    .bot-bubble:hover .message-options {
-        opacity: 1;
-    }
-
-    /* Emotion indicators */
-    .emotion-indicator {
-        display: inline-block;
-        padding: 2px 6px;
-        border-radius: 10px;
-        font-size: 10px;
-        font-weight: 500;
-        margin-bottom: 3px;
-    }
-
-    .emotion-happy { background: #d4edda; color: #155724; }
-    .emotion-sad { background: #f8d7da; color: #721c24; }
-    .emotion-angry { background: #f5c6cb; color: #721c24; }
-    .emotion-high-risk { background: #f8d7da; color: #721c24; animation: pulse 2s infinite; }
-
-    /* Timestamps */
-    .timestamp {
-        font-size: 10px;
-        color: #666;
-        text-align: right;
-        margin-top: 2px;
-    }
-
-    .timestamp-left {
-        text-align: left;
-    }
-
-    /* Animations */
-    @keyframes pulse {
-        0% { opacity: 1; }
-        50% { opacity: 0.5; }
-        100% { opacity: 1; }
-    }
-
-    @keyframes shake {
-        0%, 100% { transform: translateX(0); }
-        25% { transform: translateX(-5px); }
-        75% { transform: translateX(5px); }
-    }
-
-    /* Input area */
-    .input-area {
-        background: #f0f0f0;
-        padding: 15px;
-        border-radius: 25px;
-        margin-top: 15px;
-        border: 1px solid #e0e0e0;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .send-btn {
-        background: #25d366;
-        color: white;
-        border: none;
-        border-radius: 50%;
-        width: 45px;
-        height: 45px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        box-shadow: 0 2px 8px rgba(37, 211, 102, 0.4);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 18px;
-    }
-
-    .send-btn:hover {
-        transform: scale(1.05);
-        box-shadow: 0 4px 12px rgba(37, 211, 102, 0.6);
-    }
-
-    /* Feature cards */
-    .feature-card {
-        background: rgba(255,255,255,0.95);
-        border-radius: 15px;
-        padding: 15px;
-        margin: 10px 0;
-        border-left: 4px solid #667eea;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-
-    /* Emergency alerts */
-    .emergency-alert {
-        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
-        color: white;
-        padding: 10px 15px;
-        border-radius: 10px;
-        margin: 8px 0;
-        font-size: 12px;
-        text-align: center;
-        animation: shake 0.5s ease-in-out;
-        box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
-    }
-
-    /* Action buttons */
-    .action-btn {
-        background: #667eea;
-        color: white;
-        border: none;
-        border-radius: 20px;
-        padding: 8px 15px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        font-size: 12px;
-        margin: 0 5px;
-    }
-
-    .action-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-    }
-
-    .delete-btn {
-        background: #dc3545;
-    }
-
-    .delete-btn:hover {
-        box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
-    }
-
-    /* Edit section */
-    .edit-section {
-        background: #fff3cd;
-        border: 1px solid #ffeaa7;
-        border-radius: 10px;
-        padding: 15px;
-        margin: 10px 0;
-    }
-
-    /* Typing indicator */
-    .typing-indicator {
-        font-style: italic;
-        color: #666;
-        padding: 8px;
-        text-align: center;
-        font-size: 12px;
-    }
-
-    /* Scrollbar styling */
-    .message-container::-webkit-scrollbar {
-        width: 6px;
-    }
-
-    .message-container::-webkit-scrollbar-track {
-        background: #f1f1f1;
-        border-radius: 10px;
-    }
-
-    .message-container::-webkit-scrollbar-thumb {
-        background: #c1c1c1;
-        border-radius: 10px;
-    }
-
-    .message-container::-webkit-scrollbar-thumb:hover {
-        background: #a8a8a8;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
-    # Main container with ChatGPT-like design
-    st.markdown('<div class="chat-container">', unsafe_allow_html=True)
-    st.markdown('<div class="chat-header">🤖 AgriCare AI</div>', unsafe_allow_html=True)
-
-    # Language selector
-    lang_choice = st.selectbox("🌐 Language", languages, key="emotion_lang")
-
-    # Initialize chat history and settings
+    
+    # Get farmer context
+    farmer_profile = st.session_state.get('farmer_profile', {})
+    farmer_name = farmer_profile.get('name', 'Friend')
+    state = farmer_profile.get('state', 'Maharashtra')
+    crops_grown = farmer_profile.get('crops', [])
+    
+    # Initialize chat history
     if "agri_history" not in st.session_state:
         st.session_state.agri_history = []
     if "emotion_messages" not in st.session_state:
         st.session_state.emotion_messages = []
-    if "emergency_alerts_sent" not in st.session_state:
-        st.session_state.emergency_alerts_sent = 0
-    if "editing_message" not in st.session_state:
-        st.session_state.editing_message = None
-    if "edit_text" not in st.session_state:
-        st.session_state.edit_text = ""
-    if "is_typing" not in st.session_state:
-        st.session_state.is_typing = False
+    if "agri_msg_value" not in st.session_state:
+        st.session_state.agri_msg_value = ""
     if "user_input_value" not in st.session_state:
         st.session_state.user_input_value = ""
-    if "clear_input" not in st.session_state:
-        st.session_state.clear_input = False
-
-    # Farmer context
-    farmer_profile = st.session_state.get('farmer_profile', {})
-
-    # Feature cards
-    st.info("🧠 **AI-Powered**: Multi-tier AI: Cohere → Local LLM → DeepAI")
-    st.info("🛡️ **Safety First**: Automatic emergency detection & WhatsApp alerts")
-    st.info("🌍 **Multi-Language**: Support in 12+ Indian languages")
-
-    # Chat messages container
-    # Welcome message if no chat history
-    if not st.session_state.agri_history and not st.session_state.emotion_messages:
-        farmer_name = farmer_profile.get('name', 'friend') if farmer_profile else 'friend'
-        st.markdown(f"""
-        <div style="text-align: center; padding: 30px; color: #666;">
-            <h3>👋 Hey {farmer_name}, welcome to AgriCare AI!</h3>
-            <p>I'm your friendly companion here to chat about farming, life, and whatever's on your mind. 🌱</p>
-            <p style="font-size: 14px; color: #888;">Feel free to share anything - I'm here to listen and support you! 💚</p>
-        </div>
-        """, unsafe_allow_html=True)
-    else:
-        # Show conversation summary for returning users
-        farmer_name = farmer_profile.get('name', 'friend') if farmer_profile else 'friend'
-        total_messages = len(st.session_state.agri_history) + len(st.session_state.emotion_messages)
-
-        st.markdown(f"""
-        <div style="text-align: center; padding: 15px; color: #666; background: #f8f9fa; border-radius: 10px; margin: 10px 0;">
-            <p style="margin: 0; font-size: 14px;">👋 Welcome back, {farmer_name}! We've had {total_messages} messages in our conversation.</p>
-            <p style="margin: 5px 0; font-size: 12px; color: #888;">I'm here whenever you need to continue our chat! 💬</p>
-        </div>
-        """, unsafe_allow_html=True)
-
-    # Enhanced ChatGPT-like conversation starters with more variety
-    if not st.session_state.agri_history and not st.session_state.emotion_messages:
-        st.markdown("### 💬 What would you like to talk about today?")
-
-        # Create a grid of conversation starters
-        col1, col2 = st.columns(2)
-
-        with col1:
-            st.markdown("**🌾 Farming & Work**")
-            farming_topics = [
-                ("Crop Problems", "I'm having issues with my crops", "sad"),
-                ("Weather Concerns", "The weather is worrying me", "sad"),
-                ("Market Prices", "I want to talk about crop prices", "sad"),
-                ("New Techniques", "I'm interested in new farming methods", "happy"),
-                ("Harvest Success", "My harvest turned out great!", "happy")
-            ]
-
-            for topic_name, user_msg, emotion in farming_topics:
-                if st.button(f"🌱 {topic_name}", key=f"farming_{topic_name.lower().replace(' ', '_')}", help=f"Talk about {topic_name.lower()}"):
-                    bot_responses = {
-                        "sad": [
-                            f"I understand, {farmer_name}. Farming can be really challenging sometimes. Tell me more about what's been difficult for you.",
-                            f"Oh, {farmer_name}, that sounds tough. I'm here to listen. What's been the biggest challenge lately?",
-                            f"I hear you, {farmer_name}. Let's talk about this together. What specifically has been worrying you?"
-                        ],
-                        "happy": [
-                            f"That's fantastic, {farmer_name}! 😊 I love hearing about farming successes. Tell me more about what went well!",
-                            f"Wonderful news, {farmer_name}! 🌟 Your hard work is paying off. What made this harvest so successful?",
-                            f"I'm so happy for you, {farmer_name}! 🎉 Success stories like yours inspire me. How did you achieve this?"
-                        ]
-                    }
-                    bot_msg = bot_responses[emotion][0]
-                    st.session_state.agri_history.append({
-                        "user": user_msg,
-                        "bot": bot_msg,
-                        "emotion": emotion,
-                        "timestamp": datetime.now()
-                    })
-                    # Clear input for conversation starters too
-                    st.session_state.user_input_value = ""
-                    st.session_state.clear_input = True
-                    st.rerun()
-
-        with col2:
-            st.markdown("**💭 Personal & Emotional**")
-            personal_topics = [
-                ("Feeling Stressed", "I'm feeling really stressed lately", "sad"),
-                ("Need Support", "I could use some emotional support", "sad"),
-                ("Share Success", "I want to share some good news", "happy"),
-                ("Family Matters", "I want to talk about family issues", "sad"),
-                ("Just Chat", "I'd like to have a casual conversation", "happy")
-            ]
-
-            for topic_name, user_msg, emotion in personal_topics:
-                if st.button(f"💙 {topic_name}", key=f"personal_{topic_name.lower().replace(' ', '_')}", help=f"Talk about {topic_name.lower()}"):
-                    bot_responses = {
-                        "sad": [
-                            f"I'm here for you, {farmer_name}. 💙 It takes courage to reach out. What's been weighing on your mind?",
-                            f"I can hear you're going through a difficult time, {farmer_name}. I'm right here with you. What's been the hardest part?",
-                            f"Thank you for trusting me with this, {farmer_name}. 🌱 I'm listening. What would you like to talk about first?"
-                        ],
-                        "happy": [
-                            f"That's wonderful, {farmer_name}! 😊 I love hearing from you. What's been bringing you joy lately?",
-                            f"I'm so glad you're reaching out, {farmer_name}! 💚 What's new and exciting in your life?",
-                            f"It's always a pleasure to chat with you, {farmer_name}! 🌟 What's been going well for you?"
-                        ]
-                    }
-                    bot_msg = bot_responses[emotion][0]
-                    st.session_state.agri_history.append({
-                        "user": user_msg,
-                        "bot": bot_msg,
-                        "emotion": emotion,
-                        "timestamp": datetime.now()
-                    })
-                    # Clear input for conversation starters too
-                    st.session_state.user_input_value = ""
-                    st.session_state.clear_input = True
-                    st.rerun()
-
-        # Quick emotion check-in
-        st.markdown("---")
-        st.markdown("### 😊 How are you feeling right now?")
-        emotion_check = st.radio(
-            "Quick check-in:",
-            ["😊 Great!", "😐 Okay", "😔 Struggling", "😠 Frustrated", "Skip for now"],
-            key="emotion_check",
-            horizontal=True,
-            label_visibility="collapsed"
-        )
-
-        if emotion_check and emotion_check != "Skip for now":
-            emotion_map = {
-                "😊 Great!": ("happy", "That's wonderful to hear! What made today good for you?"),
-                "😐 Okay": ("sad", "I appreciate you sharing that. What's been on your mind lately?"),
-                "😔 Struggling": ("sad", "I'm here for you. Would you like to talk about what's been difficult?"),
-                "😠 Frustrated": ("angry", "I can sense your frustration. What happened that made you feel this way?")
-            }
-
-            detected_emotion, bot_msg = emotion_map[emotion_check]
-            st.session_state.agri_history.append({
-                "user": f"I'm feeling {emotion_check.lower()}",
-                "bot": bot_msg,
+    
+    # Get current emotion state
+    all_messages = st.session_state.agri_history + st.session_state.emotion_messages
+    current_emotion = "happy"
+    if all_messages:
+        current_emotion = all_messages[-1].get('emotion', 'happy')
+    
+    # ===== SIMPLE LAYOUT =====
+    st.markdown("## 🌾 AgriCare AI - Your Farming Companion")
+    
+    # Quick Action Buttons
+    st.markdown("### ⚡ Quick Actions")
+    col1, col2 = st.columns(2)
+    
+    quick_actions = [
+        ("🌾 Crop Issue", "My crops are having problems"),
+        ("💰 Market Price", "What's the current market price?"),
+        ("🌧 Weather", "How will weather affect my farm?"),
+        ("💙 Need Support", "I need someone to talk to")
+    ]
+    
+    with col1:
+        if st.button("🌾 Crop Issue", use_container_width=True):
+            detected = detect_emotion("My crops are having problems")
+            response = get_chatgpt_style_fallback(detected, global_lang, farmer_profile, "My crops are having problems", st.session_state.emotion_messages)
+            st.session_state.emotion_messages.append({
+                "user": "My crops are having problems", 
+                "bot": response, 
+                "emotion": detected, 
+                "timestamp": datetime.now()
+            })
+            st.rerun()
+        
+        if st.button("🌧 Weather", use_container_width=True):
+            detected = detect_emotion("How will weather affect my farm?")
+            response = get_chatgpt_style_fallback(detected, global_lang, farmer_profile, "How will weather affect my farm?", st.session_state.emotion_messages)
+            st.session_state.emotion_messages.append({
+                "user": "How will weather affect my farm?", 
+                "bot": response, 
+                "emotion": detected, 
+                "timestamp": datetime.now()
+            })
+            st.rerun()
+    
+    with col2:
+        if st.button("💰 Market Price", use_container_width=True):
+            detected = detect_emotion("What's the current market price?")
+            response = get_chatgpt_style_fallback(detected, global_lang, farmer_profile, "What's the current market price?", st.session_state.emotion_messages)
+            st.session_state.emotion_messages.append({
+                "user": "What's the current market price?", 
+                "bot": response, 
+                "emotion": detected, 
+                "timestamp": datetime.now()
+            })
+            st.rerun()
+        
+        if st.button("💙 Need Support", use_container_width=True):
+            detected = detect_emotion("I need someone to talk to")
+            response = get_chatgpt_style_fallback(detected, global_lang, farmer_profile, "I need someone to talk to", all_messages)
+            st.session_state.emotion_messages.append({
+                "user": "I need someone to talk to", 
+                "bot": response, 
+                "emotion": detected, 
+                "timestamp": datetime.now()
+            })
+            st.rerun()
+    
+    st.markdown("---")
+    
+    # Two column layout: Chat + Sidebar
+    chat_col, side_col = st.columns([3, 1])
+    
+    with chat_col:
+        st.markdown("### 💬 Chat")
+        
+        # Show welcome if no messages
+        if not all_messages:
+            st.info(f"👋 Namaste, {farmer_name}! Ask me about farming or share how you're feeling.")
+        
+        # Chat display
+        chat_container = st.container(height=350)
+        with chat_container:
+            for chat in all_messages[-20:]:
+                timestamp = chat.get('timestamp', datetime.now())
+                if isinstance(timestamp, str):
+                    timestamp = datetime.fromisoformat(timestamp)
+                time_str = timestamp.strftime("%H:%M")
+                
+                emotion = chat.get('emotion', 'happy')
+                emoji = {"happy": "😊", "sad": "😔", "angry": "😠", "high_risk": "🚨"}.get(emotion, "💚")
+                
+                # User message
+                st.markdown(f"**You:** {chat['user']}")
+                
+                # Bot response
+                st.markdown(f"{emoji} **AgriCare AI:** {chat['bot']}")
+                st.caption(time_str)
+                st.markdown("---")
+        
+        # Input area with form to support Enter key
+        st.markdown("**Type your message:**")
+        
+        with st.form("agri_chat_form", clear_on_submit=True):
+            user_input = st.text_input(
+                "Message", 
+                placeholder="Ask about farming or share how you feel...",
+                key="agri_msg_input",
+                label_visibility="collapsed"
+            )
+            
+            col_send, col_clear = st.columns([1, 1])
+            with col_send:
+                submit_btn = st.form_submit_button("📤 Send", type="primary")
+            with col_clear:
+                clear_btn = st.form_submit_button("🗑️ Clear")
+        
+        # Handle form submission
+        if submit_btn and user_input.strip():
+            detected_emotion = detect_emotion(user_input)
+            
+            # Try Cohere API first if available
+            bot_response = None
+            if COHERE_API_KEY:
+                try:
+                    bot_response = get_cohere_response(user_input, detected_emotion, global_lang, farmer_profile, st.session_state.emotion_messages)
+                except Exception as e:
+                    print(f"Cohere error: {e}")
+            
+            # Fallback to rule-based response if Cohere fails or not available
+            if not bot_response:
+                bot_response = get_chatgpt_style_fallback(detected_emotion, global_lang, farmer_profile, user_input, st.session_state.emotion_messages)
+            
+            st.session_state.emotion_messages.append({
+                "user": user_input,
+                "bot": bot_response,
                 "emotion": detected_emotion,
                 "timestamp": datetime.now()
             })
-            # Clear input for emotion check-in too
-            st.session_state.user_input_value = ""
-            st.session_state.clear_input = True
             st.rerun()
-    else:
-        # Show conversation summary for returning users
-        farmer_name = farmer_profile.get('name', 'friend') if farmer_profile else 'friend'
-        total_messages = len(st.session_state.agri_history) + len(st.session_state.emotion_messages)
-        last_topic = "our conversation"  # Could be enhanced to detect topics
-
-        st.markdown(f"""
-        <div style="text-align: center; padding: 15px; color: #666; background: #f8f9fa; border-radius: 10px; margin: 10px 0;">
-            <p style="margin: 0; font-size: 14px;">👋 Welcome back, {farmer_name}! We've had {total_messages} messages in our conversation.</p>
-            <p style="margin: 5px 0; font-size: 12px; color: #888;">I'm here whenever you need to continue our chat! 💬</p>
-        </div>
-        """, unsafe_allow_html=True)
-
-    # Combine both chat histories for display
-    all_messages = st.session_state.agri_history + st.session_state.emotion_messages
-    all_messages.sort(key=lambda x: x.get('timestamp', datetime.now()), reverse=False)
-
-    # Display chat history using new chat bubble renderer
-    for i, chat in enumerate(all_messages[-50:]):  # Show last 50 messages
-        message_id = len(all_messages) - 50 + i if len(all_messages) > 50 else i
-
-        # Format timestamp
-        timestamp = chat.get('timestamp', datetime.now())
-        if isinstance(timestamp, str):
-            timestamp = datetime.fromisoformat(timestamp)
-        time_str = timestamp.strftime("%H:%M")
-
-        # User message
-        st.markdown(f"""
-        <div style="background: #dcf8c6; padding: 8px 12px; border-radius: 8px 8px 4px 8px; margin: 5px 0; max-width: 70%; float: right; clear: both; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">
-            {chat['user']}
-            <div style="font-size: 10px; color: #666; text-align: right; margin-top: 2px;">✓✓ {time_str}</div>
-        </div>
-        <div style="clear: both;"></div>
-        """, unsafe_allow_html=True)
-
-        # Bot message
-        emotion = chat.get('emotion', 'sad')
-        emotion_emoji = {"happy": "😊", "sad": "😔", "angry": "😠", "high_risk": "🚨"}.get(emotion, "🤖")
-
-        bot_message = f'<div style="margin-bottom: 5px;"><span style="background: #e9ecef; padding: 2px 6px; border-radius: 10px; font-size: 10px;">{emotion_emoji} {emotion.title()}</span></div>{chat["bot"]}'
-
-        st.markdown(f"""
-        <div style="background: white; padding: 8px 12px; border-radius: 8px 8px 8px 4px; margin: 5px 0; max-width: 70%; box-shadow: 0 1px 2px rgba(0,0,0,0.1); border-left: 3px solid #667eea;">
-            {bot_message}
-            <div style="font-size: 10px; color: #666; text-align: left; margin-top: 2px;">{time_str}</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        # Emergency alert notification
-        if chat.get('emergency_sent', False):
-            st.error(f"🚨 EMERGENCY WHATSAPP ALERT SENT! WhatsApp sent to {chat.get('sms_count', 0)} family members • {time_str}")
-
+        
+        # Handle clear
+        if clear_btn:
+            st.session_state.agri_history = []
+            st.session_state.emotion_messages = []
+            st.rerun()
+    
+    # Right sidebar
+    with side_col:
+        st.markdown("### 🧠 Your Status")
+        
+        # Emotion indicator
+        emotion_data = {
+            "happy": ("😊", "Feeling Good", "green"),
+            "sad": ("😔", "Feeling Low", "orange"),
+            "angry": ("😠", "Frustrated", "red"),
+            "high_risk": ("🚨", "Need Support", "red")
+        }
+        emo_emoji, emo_status, emo_color = emotion_data.get(current_emotion, ("😊", "Good", "green"))
+        
+        st.markdown(f":{emo_color}[**{emo_emoji} {emo_status}**]")
+        
         st.markdown("---")
-
-    # Input area
-    # Dynamic placeholder based on conversation history
-    all_messages = st.session_state.agri_history + st.session_state.emotion_messages
-    if not all_messages:
-        placeholder_text = "Share what's on your mind today... 💭"
-    else:
-        farmer_name = farmer_profile.get('name', 'friend') if farmer_profile else 'friend'
-        placeholder_text = f"What's new with you, {farmer_name}? I'm here to listen... 💚"
-
-    st.markdown("**💬 Your Message**")
-
-    # Chat actions
-    col1, col2, col3, col4 = st.columns([2, 2, 6, 2])
-
-    with col1:
-        if st.button("🗑️ Clear Chat", key="clear_chat", help="Clear all messages"):
-            if st.session_state.agri_history or st.session_state.emotion_messages:
-                st.session_state.agri_history = []
-                st.session_state.emotion_messages = []
-                st.session_state.emergency_alerts_sent = 0
-                st.session_state.user_input_value = ""
-                st.session_state.clear_input = False
-                st.session_state.is_typing = False
-                st.rerun()
-
-    with col2:
-        if st.button("💾 Export", key="export_chat", help="Export chat history"):
-            all_messages = st.session_state.agri_history + st.session_state.emotion_messages
-            if all_messages:
-                chat_text = "AgriCare AI Chat History\n\n"
-                for chat in sorted(all_messages, key=lambda x: x.get('timestamp', datetime.now())):
-                    timestamp = chat.get('timestamp', datetime.now())
-                    if isinstance(timestamp, str):
-                        timestamp = datetime.fromisoformat(timestamp)
-                    time_str = timestamp.strftime("%Y-%m-%d %H:%M:%S")
-
-                    chat_text += f"You ({time_str}):\n{chat['user']}\n\n"
-                    chat_text += f"AgriCare AI ({time_str}):\n{chat['bot']}\n\n"
-                    if chat.get('emergency_sent'):
-                        chat_text += f"🚨 EMERGENCY WHATSAPP ALERT SENT to {chat.get('sms_count', 0)} family members\n\n"
-                    chat_text += "---\n\n"
-
-                st.download_button(
-                    label="📥 Download Chat",
-                    data=chat_text,
-                    file_name="agricare_ai_chat_history.txt",
-                    mime="text/plain",
-                    key="download_chat"
-                )
-
-    with col3:
-        # Dynamic placeholder based on conversation history
-        all_messages = st.session_state.agri_history + st.session_state.emotion_messages
-        if not all_messages:
-            placeholder_text = "Share what's on your mind today... 💭"
-        else:
-            farmer_name = farmer_profile.get('name', 'friend') if farmer_profile else 'friend'
-            placeholder_text = f"What's new with you, {farmer_name}? I'm here to listen... 💚"
-
-        user_input = st.text_input(
-            "Type your message",
-            placeholder=placeholder_text,
-            key="emotion_input",
-            label_visibility="collapsed",
-            value=st.session_state.get('user_input_value', '')
-        )
-
-        # Clear input value after processing
-        if st.session_state.get('clear_input', False):
-            st.session_state.user_input_value = ""
-            st.session_state.clear_input = False
-
-    with col4:
-        if st.button("📤 Send", key="send_emotion", help="Send message", use_container_width=True):
-            if user_input.strip():
-                # Detect emotion first
-                detected_emotion = detect_emotion(user_input)
-
-                # Show typing indicator
-                st.session_state.is_typing = True
-
-                # Get AI response with conversation context (use combined history)
-                all_messages = st.session_state.agri_history + st.session_state.emotion_messages
-
-                # Try multiple AI services in order of preference
-                bot_response = None
-
-                # 1. Try Cohere API if available
-                if COHERE_API_KEY:
-                    try:
-                        bot_response = get_cohere_response(
-                            user_input,
-                            detected_emotion,
-                            lang_choice,
-                            farmer_profile,
-                            all_messages
-                        )
-                        print("Using Cohere API response")
-                    except Exception as e:
-                        print(f"Cohere API Error: {e}")
-                        bot_response = None
-
-                # 2. Try local free LLM
-                if bot_response is None and free_chat_model is not None:
-                    try:
-                        bot_response = get_free_llm_response(
-                            user_input,
-                            detected_emotion,
-                            lang_choice,
-                            farmer_profile,
-                            all_messages
-                        )
-                        print("Using local free LLM response")
-                    except Exception as e:
-                        print(f"Local LLM Error: {e}")
-                        bot_response = None
-
-                # 3. Final fallback
-                if bot_response is None:
-                    bot_response = get_chatgpt_style_fallback(detected_emotion, lang_choice, farmer_profile, user_input, all_messages)
-                    print("Using fallback response")
-
-                # Hide typing indicator
-                st.session_state.is_typing = False
-
-                # Check for emergency situation - NOW WITH USER CONSENT (safer approach)
-                emergency_sent = False
-                sms_count = 0
-                
-                # Instead of auto-sending, show suggestion to user
-                if detected_emotion == "high_risk" and farmer_profile:
-                    # Show intervention suggestion, not auto-send
-                    st.warning("""
-                    💙 **You seem to be going through a difficult moment.**
-                    
-                    You don't have to handle this alone. Would you like to inform a family member?
-                    """)
-                    
-                    # Generate suggested message
-                    farmer_name = farmer_profile.get('name', 'Farmer')
-                    suggested_message = f"Hi, I'm not feeling okay right now. Can you please talk to me?"
-                    
-                    # Show message options
-                    msg_col1, msg_col2, msg_col3 = st.columns(3)
-                    with msg_col1:
-                        send_suggested = st.button("📩 Send to Family", key="send_family_msg")
-                    with msg_col2:
-                        edit_msg = st.button("✏️ Edit Message", key="edit_family_msg")
-                    with msg_col3:
-                        dismiss_msg = st.button("❌ Not Now", key="dismiss_family_msg")
-                    
-                    if send_suggested:
-                        # Send message with user consent
-                        sms_count = send_emergency_whatsapp(farmer_profile, "Current Location", lang_choice)
-                        if sms_count > 0:
-                            emergency_sent = True
-                            st.session_state.emergency_alerts_sent += 1
-                            st.success("✅ Message sent to your family member. They will contact you soon.")
-                    elif edit_msg:
-                        # Let user edit the message
-                        custom_message = st.text_area("Edit your message:", value=suggested_message, key="custom_emergency_msg")
-                        if st.button("✅ Send Custom Message"):
-                            sms_count = send_emergency_whatsapp(farmer_profile, "Current Location", lang_choice)
-                            if sms_count > 0:
-                                emergency_sent = True
-                                st.session_state.emergency_alerts_sent += 1
-                                st.success("✅ Message sent!")
-                    # Dismiss does nothing - just continues conversation
-
-                # Prevent duplicate message appending
-                message_exists = False
-                for chat in all_messages:
-                    if (chat.get('user') == user_input and
-                        chat.get('timestamp') and
-                        (datetime.now() - chat['timestamp']).total_seconds() < 5):  # Within 5 seconds
-                        message_exists = True
-                        break
-
-                if not message_exists:
-                    # Add to chat history (use emotion_messages for new messages)
-                    st.session_state.emotion_messages.append({
-                        "user": user_input,
-                        "bot": bot_response,
-                        "emotion": detected_emotion,
-                        "timestamp": datetime.now(),
-                        "emergency_sent": emergency_sent,
-                        "sms_count": sms_count
-                    })
-
-                # Clear the input after sending
-                st.session_state.user_input_value = ""
-                st.session_state.clear_input = True
-
-                # Rerun to update chat
-                st.rerun()
-
-    st.markdown('</div>', unsafe_allow_html=True)  # End input container
-
-    # Enhanced ChatGPT-like Conversation Insights using new renderers
-    all_messages = st.session_state.agri_history + st.session_state.emotion_messages
-    if all_messages:
-        with st.expander("📊 Conversation Insights", expanded=False):
-            total_messages = len(all_messages)
-            emotions_detected = [chat.get('emotion', 'neutral') for chat in all_messages if chat.get('emotion')]
-            emotion_counts = {}
-            for emotion in emotions_detected:
-                emotion_counts[emotion] = emotion_counts.get(emotion, 0) + 1
-
-            most_common_emotion = max(emotion_counts.items(), key=lambda x: x[1])[0] if emotion_counts else "neutral"
-
-            farmer_name = farmer_profile.get('name', 'friend') if farmer_profile else 'friend'
-
-            # Calculate conversation patterns
-            conversation_length = len(all_messages)
-            emergency_alerts = st.session_state.emergency_alerts_sent
-
-            # Use stats grid for conversation metrics
-            stats = {
-                "Total Messages": (total_messages, "💬"),
-                "Primary Emotion": (most_common_emotion.title(), "😊" if most_common_emotion == "happy" else "😔" if most_common_emotion == "sad" else "😠" if most_common_emotion == "angry" else "🚨"),
-                "Emergency Alerts": (emergency_alerts, "📱")
-            }
-            col1, col2, col3 = st.columns(3)
-            col1.metric("Total Messages", stats["Total Messages"][0], delta=None)
-            col2.metric("Primary Emotion", stats["Primary Emotion"][0], delta=None)
-            col3.metric("Emergency Alerts", stats["Emergency Alerts"][0], delta=None)
-
-            # Generate personalized insights
-            insights = []
-
-            if most_common_emotion == "happy":
-                insights.append("🌟 You're showing a positive outlook - that's wonderful!")
-            elif most_common_emotion == "sad":
-                insights.append("💙 I notice you've been going through some challenges lately")
-            elif most_common_emotion == "angry":
-                insights.append("😠 It seems like frustration has been a common theme")
-            elif most_common_emotion == "high_risk":
-                insights.append("🚨 I've detected some concerning moments in our conversation")
-
-            if emergency_alerts > 0:
-                insights.append(f"📱 Emergency WhatsApp support was activated {emergency_alerts} time(s) - help is available")
-
-            if conversation_length > 10:
-                insights.append("🎯 We've had a meaningful conversation - I'm here whenever you need to continue")
-
-            # Time-based insights
-            if conversation_length > 1:
-                sorted_messages = sorted(all_messages, key=lambda x: x.get('timestamp', datetime.now()))
-                first_message = sorted_messages[0]['timestamp']
-                last_message = sorted_messages[-1]['timestamp']
-                if isinstance(first_message, str):
-                    first_message = datetime.fromisoformat(first_message)
-                if isinstance(last_message, str):
-                    last_message = datetime.fromisoformat(last_message)
-
-                conversation_duration = (last_message - first_message).total_seconds()
-                hours_active = conversation_duration / 3600
-
-                if hours_active > 24:
-                    insights.append("⏰ Our conversation has spanned multiple days - consistency shows strength")
-
-            if insights:
-                insights_content = "<br>".join(f"• {insight}" for insight in insights)
-                st.info(f"<strong>💡 Insights:</strong><br>{insights_content}")
-
-            # Remember message
-            remember_content = f"""
-            <strong>💚 Remember:</strong> {farmer_name}, I'm always here for you. Whether you want to talk about farming challenges,
-            share good news, or just need someone to listen - I'm just a message away. Your well-being matters to me! 🌱
-            """
-            st.success(remember_content)
-
-    # Enhanced typing indicator using new renderer
-    if st.session_state.get('is_typing', False):
-        with st.spinner("?? AI is typing..."): st.empty()
-        # Force a small delay to show typing indicator
-        import time
-        time.sleep(0.5)
-
-    # Emergency stats
-    if st.session_state.emergency_alerts_sent > 0:
-        st.warning(f"Emergency WhatsApp alerts sent: {st.session_state.emergency_alerts_sent}")
-
-    # Helpline information
-    with st.expander("🆘 Emergency Helplines"):
-        helpline_content = """
-        <strong>India Emergency Helplines:</strong><br><br>
-        • <strong>Mental Health:</strong> 1800-121-4559 (AASRA)<br>
-        • <strong>Farmer Helpline:</strong> 1800-120-0024 (Kisan Call Centre)<br>
-        • <strong>Suicide Prevention:</strong> 9152987821 (Vandrevala Foundation)<br>
-        • <strong>Police:</strong> 100 | <strong>Ambulance:</strong> 108<br><br>
-        <strong>Remember:</strong> You're not alone. Help is always available! 🌟
-        """
-        st.markdown(helpline_content)
+        st.markdown("### 📞 Help Lines")
+        st.write("🧠 iCall: 9152987821")
+        st.write("🚔 Police: 100")
+        st.write("🌾 Kisan: 1800-180-1551")
 
 # ---------------------------
 # Emergency Alert
