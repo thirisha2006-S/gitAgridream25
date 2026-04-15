@@ -2878,6 +2878,12 @@ elif menu == get_text("menu_price", global_lang):
         max_price = int(current_price * 1.15)
         market_info = selected_state
     
+    # Get crop_prices for market info (if available from CSV)
+    if selected_state in df['State'].values:
+        crop_prices = df[(df['Commodity'] == crop_choice) & (df['State'] == selected_state)]
+    else:
+        crop_prices = pd.DataFrame()  # Empty if no data
+    
     # ===== GENERATE FORECAST BEFORE DECISION =====
     # Calculate predicted price using simple moving average logic
     historical_prices = [int(current_price * (1 - 0.008 * i)) for i in range(30, 0, -1)]
@@ -3018,7 +3024,7 @@ elif menu == get_text("menu_price", global_lang):
         st.plotly_chart(fig, use_container_width=True)
         
         # ===== 🏆 BEST MARKET =====
-        if not crop_prices.empty:
+        if crop_prices is not None and not crop_prices.empty:
             market_prices = crop_prices[['Market', 'Modal_x0020_Price', 'District']].drop_duplicates(subset=['Market'])
             best_market_row = market_prices.loc[market_prices['Modal_x0020_Price'].idxmax()]
             
