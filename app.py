@@ -2456,109 +2456,167 @@ elif menu == get_text("menu_crop_rec", global_lang):
     if st.button(get_text("get_recommendation", global_lang)):
         recommended_crops, confidences, reasoning = recommend_crop(N, P, K, temperature, humidity, ph, rainfall, state)
 
-        st.write(f"### {get_text('top_3_crops', global_lang)}")
+        # === CROP DECISION ENGINE (RE DESIGN) ===
+        st.markdown("---")
+        st.markdown("""
+        <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 25px; border-radius: 15px; margin: 20px 0; text-align: center;">
+            <h2 style="color: white; margin: 0;">🚦 CROP DECISION ENGINE</h2>
+            <p style="color: white; opacity: 0.9;">Based on your conditions - ranked by profit & risk</p>
+        </div>
+        """, unsafe_allow_html=True)
         
-        # Display each crop with reasoning
+        # Build crop decisions with profit analysis
+        crop_decisions = []
+        
         for i, (crop, conf) in enumerate(zip(recommended_crops, confidences), 1):
-            crop_display = crop.title()  # Show "Rice" instead of "rice"
-            st.markdown(f"**{i}. {crop_display}** - {get_text('confidence', global_lang)}: {conf:.1f}%")
-            
-            # Show reasoning for this crop
-            if crop in reasoning:
-                crop_reasoning = reasoning[crop]
-                with st.expander(f"🎯 Why {crop_display}?"):
-                    for reason in crop_reasoning['reasons']:
-                        st.write(f"• {reason}")
-                    
-                    st.markdown("**Key Factors:**")
-                    for factor in crop_reasoning['factors']:
-                        st.caption(f"📌 {factor}")
-            
-            # Get profit info for this crop - ENHANCED CARD WITH PLANT CYCLE
-            # Use title() to match keys (ML returns lowercase like "rice", dict has "Rice")
             crop_key = crop.title()
             if crop_key in CROP_PROFIT_INFO:
                 profit = CROP_PROFIT_INFO[crop_key]
                 
-                # Get duration in days for timeline calculation
-                duration_str = profit.get('growth_period', '120 days')
-                # Extract min and max days
-                if 'month' in duration_str.lower():
-                    months = ''.join(filter(str.isdigit, duration_str.split('-')[0] if '-' in duration_str else duration_str))
-                    min_days = int(months) * 30 if months else 120
-                    max_days = int(months) * 30 if months else 120
+                # Calculate estimated profit (simple formula)
+                price = int(''.join(filter(str.isdigit, profit.get('market_value', '2000').split('-')[0]))) or 2000
+                # Yield estimate: 20-40 quintal/acre depending on crop
+                yield_est = {"Rice": 30, "Wheat": 25, "Maize": 35, "Cotton": 15, "Tomato": 40}.get(crop_key, 25)
+                cost = int(''.join(filter(str.isdigit, profit.get('initial_cost', '15000').split('-')[0]))) or 15000
+                estimated_profit = (price * yield_est) - cost
+                
+                # Risk calculation
+                risk_score = 0
+                if profit['risk']['water'] == 'High': risk_score += 2
+                if profit['risk']['water'] == 'Medium': risk_score += 1
+                if profit['risk']['pest'] == 'High': risk_score += 2
+                if profit['risk']['pest'] == 'Medium': risk_score += 1
+                
+                if risk_score >= 3:
+                    risk_level = "🔴 High"
+                elif risk_score >= 1:
+                    risk_level = "🟡 Medium"
                 else:
-                    nums = ''.join(filter(str.isdigit, duration_str))
-                    if '-' in duration_str:
-                        parts = duration_str.split('-')
-                        min_days = int(''.join(filter(str.isdigit, parts[0]))) if parts[0] else 90
-                        max_days = int(''.join(filter(str.isdigit, parts[1]))) if len(parts) > 1 and parts[1] else 120
-                    else:
-                        min_days = max_days = int(nums) if nums else 120
+                    risk_level = "🟢 Low"
                 
-                # Create visual timeline
-                timeline_html = f"""
-                <div style="background: linear-gradient(90deg, #4CAF50 0%, #8BC34A 50%, #CDDC39 100%); 
-                            padding: 10px; border-radius: 8px; margin: 10px 0; text-align: center;">
-                    <span style="color: white; font-weight: bold;">🌱 Plant Duration Timeline</span><br>
-                    <span style="color: white; font-size: 12px;">
-                        Day 1 → 🌿 Growth → 🌾 Harvest (Day {min_days}-{max_days})
-                    </span>
-                </div>
-                """
-                st.markdown(timeline_html, unsafe_allow_html=True)
+                # Demand calculation (based on market value trends)
+                if profit['profit_outlook'] == 'High':
+                    demand = "📈 High"
+                elif profit['profit_outlook'] == 'Medium':
+                    demand = "📊 Medium"
+                else:
+                    demand = "📉 Low"
                 
-                # Create enhanced card with all info
-                st.markdown(f"""
-                <div style="background-color: #f0f8ff; padding: 15px; border-radius: 10px; margin: 10px 0; border-left: 5px solid #28a745;">
-                    <h3 style="color: #28a745; margin-top: 0;">🌾 {crop_display}</h3>
-                    <table style="width: 100%;">
-                        <tr>
-                            <td><strong>📊 Confidence:</strong></td>
-                            <td>{conf:.1f}%</td>
-                        </tr>
-                        <tr>
-                            <td><strong>⏳ Plant Duration:</strong></td>
-                            <td>{profit['growth_period']}</td>
-                        </tr>
-                        <tr>
-                            <td><strong>📆 Growth Cycle:</strong></td>
-                            <td>{min_days}-{max_days} days</td>
-                        </tr>
-                        <tr>
-                            <td><strong>💰 Income Timing:</strong></td>
-                            <td>Get money after ~{profit['income_timing']}</td>
-                        </tr>
-                        <tr>
-                            <td><strong>📅 Harvest Time:</strong></td>
-                            <td>{profit['harvest_month']}</td>
-                        </tr>
-                        <tr>
-                            <td><strong>💵 Initial Investment:</strong></td>
-                            <td>{profit.get('initial_cost', 'N/A')}</td>
-                        </tr>
-                        <tr>
-                            <td><strong>💧 Water Requirement:</strong></td>
-                            <td>{profit.get('water_need', 'Medium')}</td>
-                        </tr>
-                        <tr>
-                            <td><strong>🔄 Crop Rotation:</strong></td>
-                            <td>After harvest → {profit.get('next_crop', 'N/A')}</td>
-                        </tr>
-                    </table>
-                </div>
-                """, unsafe_allow_html=True)
+                # Duration
+                duration_str = profit.get('growth_period', '120 days')
                 
-                # Profit Outlook
-                profit_color = "🟢" if profit['profit_outlook'] == "High" else "🟡" if profit['profit_outlook'] == "Medium" else "🔴"
-                st.markdown(f"**💰 Profit Outlook:** {profit_color} {profit['profit_outlook']} ({profit['market_value']})")
-                
-                # Risk Assessment
-                risk_color_w = "🟢" if profit['risk']['water'] == "Low" else "🟡" if profit['risk']['water'] == "Medium" else "🔴"
-                risk_color_p = "🟢" if profit['risk']['pest'] == "Low" else "🟡" if profit['risk']['pest'] == "Medium" else "🔴"
-                st.markdown(f"**⚠️ Risk:** Water {risk_color_w} {profit['risk']['water']} | Pest {risk_color_p} {profit['risk']['pest']}")
+                crop_decisions.append({
+                    'rank': i,
+                    'name': crop_key,
+                    'confidence': conf,
+                    'profit': estimated_profit,
+                    'risk': risk_level,
+                    'demand': demand,
+                    'duration': duration_str,
+                    'water': profit.get('water_need', 'Medium'),
+                    'market_value': profit.get('market_value', '₹2000/quintal'),
+                    'harvest': profit.get('harvest_month', 'TBD'),
+                    'reasons': reasoning.get(crop, {}).get('reasons', ['Suitable for your conditions'])
+                })
+        
+        # Sort by profit (highest first)
+        crop_decisions.sort(key=lambda x: x['profit'], reverse=True)
+        
+        # === 1. BEST CROP (HERO SECTION) ===
+        if crop_decisions:
+            best = crop_decisions[0]
             
-            st.markdown("---")
+            st.markdown(f"""
+            <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); padding: 30px; border-radius: 15px; margin: 20px 0; text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
+                <h2 style="color: white; margin: 0;">🥇 BEST CHOICE: {best['name'].upper()}</h2>
+                <p style="color: white; font-size: 18px; margin: 10px 0;">💰 Estimated Profit: ₹{best['profit']:,}/acre</p>
+                <p style="color: white; opacity: 0.9;">⚠️ Risk: {best['risk']} | 📈 Demand: {best['demand']} | ⏳ Duration: {best['duration']}</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # WHY section for best crop
+            st.markdown(f"### 🎯 Why **{best['name']}**?")
+            for reason in best['reasons'][:3]:
+                st.write(f"✅ {reason}")
+            
+            # Add weather/conditions based reasoning
+            if rainfall > 100:
+                st.write("✅ High rainfall matches water requirement")
+            elif rainfall < 50:
+                st.write("✅ Low water need - suitable for drought conditions")
+            
+            if 20 <= temperature <= 30:
+                st.write("✅ Temperature is optimal for growth")
+            
+            # === 2. ALTERNATIVES ===
+            if len(crop_decisions) > 1:
+                st.markdown("### 🥈 Alternatives (Ranked by Profit)")
+                
+                for crop in crop_decisions[1:]:
+                    risk_emoji = "🔴" if "High" in crop['risk'] else "🟡" if "Medium" in crop['risk'] else "🟢"
+                    
+                    st.markdown(f"""
+                    <div style="background-color: #f8f9fa; padding: 15px; border-radius: 10px; margin: 10px 0; border-left: 5px solid #ffc107;">
+                        <h4 style="margin: 0;">🌾 {crop['name']}</h4>
+                        <p style="margin: 5px 0;">💰 Profit: ₹{crop['profit']:,} | {risk_emoji} {crop['risk']} | ⏳ {crop['duration']}</p>
+                        <p style="margin: 0; color: #666;">📈 Demand: {crop['demand']} | 💵 Market: {crop['market_value']}</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+            
+            # === 3. AVOID (if any high risk) ===
+            high_risk_crops = [c for c in crop_decisions if "High" in c['risk']]
+            if high_risk_crops:
+                st.markdown("### 🚫 Consider Avoiding")
+                for crop in high_risk_crops:
+                    st.warning(f"⚠️ **{crop['name']}**: High risk - {crop['risk']} - Requires careful management")
+        
+        # === DETAILED CROP CARDS ===
+        st.markdown("---")
+        st.markdown("### 📋 Detailed Crop Analysis")
+        
+        for crop in crop_decisions:
+            # Get full profit info
+            profit_info = CROP_PROFIT_INFO.get(crop['name'], {})
+            
+            st.markdown(f"""
+            <div style="background-color: #f0f8ff; padding: 20px; border-radius: 15px; margin: 15px 0; border: 2px solid #28a745;">
+                <h3 style="color: #28a745; margin-top: 0;">🌾 {crop['name']}</h3>
+                <table style="width: 100%;">
+                    <tr><td><strong>📊 ML Confidence:</strong></td><td>{crop['confidence']:.1f}%</td></tr>
+                    <tr><td><strong>💰 Estimated Profit:</strong></td><td>₹{crop['profit']:,}/acre</td></tr>
+                    <tr><td><strong>⏳ Duration:</strong></td><td>{crop['duration']}</td></tr>
+                    <tr><td><strong>📅 Harvest:</strong></td><td>{crop['harvest']}</td></tr>
+                    <tr><td><strong>💵 Market Price:</strong></td><td>{crop['market_value']}</td></tr>
+                    <tr><td><strong>💧 Water Need:</strong></td><td>{crop['water']}</td></tr>
+                    <tr><td><strong>⚠️ Risk Level:</strong></td><td>{crop['risk']}</td></tr>
+                    <tr><td><strong>📈 Demand:</strong></td><td>{crop['demand']}</td></tr>
+                </table>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # === DETAILED CROP CARDS ===
+        st.markdown("---")
+        st.markdown("### 📋 Detailed Crop Analysis")
+        
+        for crop in crop_decisions:
+            # Get full profit info
+            profit_info = CROP_PROFIT_INFO.get(crop['name'], {})
+            
+            st.markdown(f"""
+            <div style="background-color: #f0f8ff; padding: 20px; border-radius: 15px; margin: 15px 0; border: 2px solid #28a745;">
+                <h3 style="color: #28a745; margin-top: 0;">🌾 {crop['name']}</h3>
+                <table style="width: 100%;">
+                    <tr><td><strong>📊 ML Confidence:</strong></td><td>{crop['confidence']:.1f}%</td></tr>
+                    <tr><td><strong>💰 Estimated Profit:</strong></td><td>₹{crop['profit']:,}/acre</td></tr>
+                    <tr><td><strong>⏳ Duration:</strong></td><td>{crop['duration']}</td></tr>
+                    <tr><td><strong>📅 Harvest:</strong></td><td>{crop['harvest']}</td></tr>
+                    <tr><td><strong>💵 Market Price:</strong></td><td>{crop['market_value']}</td></tr>
+                    <tr><td><strong>💧 Water Need:</strong></td><td>{crop['water']}</td></tr>
+                    <tr><td><strong>⚠️ Risk Level:</strong></td><td>{crop['risk']}</td></tr>
+                    <tr><td><strong>📈 Demand:</strong></td><td>{crop['demand']}</td></tr>
+                </table>
+            </div>
+            """, unsafe_allow_html=True)
 
         # Risk Warnings based on inputs
         st.write("### ⚠️ Risk Warnings")
