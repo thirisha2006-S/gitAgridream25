@@ -2878,65 +2878,107 @@ elif menu == get_text("menu_price", global_lang):
         max_price = int(current_price * 1.15)
         market_info = selected_state
 
-    # ===== SHOW SIMPLE CLEAN RESULTS =====
+    # ===== SHOW DECISION-ENGINE RESULTS =====
     if check_btn and current_price:
         st.markdown("---")
         
-        # ===== SIMPLE CLEAN DISPLAY =====
-        st.markdown(f"### 💹 Current Modal Price for {crop_choice}")
+        # ===== 🚦 MAIN DECISION (HERO SECTION) =====
+        # Calculate trend and decision
+        trend_direction = 'stable'
+        if predicted_price > current_price * 1.05:
+            trend_direction = 'increasing'
+            decision = "🟢 WAIT - Price likely to rise"
+            decision_color = "#28a745"
+            money_impact = f"+₹{int(predicted_price - current_price)} potential gain"
+            confidence = "Medium"
+            best_action = "Wait 7-14 days for better price"
+        elif predicted_price < current_price * 0.95:
+            trend_direction = 'decreasing'
+            decision = "🔴 SELL NOW - Price likely to drop"
+            decision_color = "#dc3545"
+            money_impact = f"₹{int(predicted_price - current_price)} potential loss"
+            confidence = "Medium"
+            best_action = "Sell immediately to avoid bigger loss"
+        else:
+            decision = "🟡 STABLE - Price expected to remain steady"
+            decision_color = "#ffc107"
+            money_impact = "No significant change expected"
+            confidence = "High"
+            best_action = "Sell when convenient - price is stable"
         
-        # Main price display - big and clear
-        st.markdown(f"### ₹{current_price}")
+        # Build decision engine output
+        st.markdown(f"""
+        <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 25px; border-radius: 15px; margin: 20px 0;">
+            <h2 style="color: white; margin: 0; text-align: center;">🚦 SHOULD YOU SELL NOW?</h2>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Main decision banner
+        st.markdown(f"""
+        <div style="background-color: {decision_color}; padding: 30px; border-radius: 15px; margin: 15px 0; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+            <h1 style="color: white; margin: 0; font-size: 32px;">{decision}</h1>
+            <p style="color: white; font-size: 20px; margin: 15px 0;">💰 {money_impact}</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Confidence & Action
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown(f"**🎯 Confidence:** {confidence}")
+        with col2:
+            st.markdown(f"**⏰ Best Action:** {best_action}")
+        
+        # Why explanation
+        if trend_direction == 'increasing':
+            why_text = "Based on historical trend analysis, prices show upward movement. Consider waiting for better returns."
+        elif trend_direction == 'decreasing':
+            why_text = "Prices show downward trend. Selling now can help avoid further losses."
+        else:
+            why_text = "Prices are stable with no significant expected change. Current market conditions are steady."
+        
+        st.markdown(f"""
+        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 10px; margin: 10px 0; border-left: 4px solid #28a745;">
+            <p style="margin: 0;"><strong>📋 Why:</strong> {why_text}</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.markdown("---")
+        
+        # ===== 💹 CURRENT PRICE INFO =====
+        st.markdown(f"### 💹 Current Market Price: {crop_choice}")
+        
+        # Main price display
+        st.markdown(f"### ₹{current_price}/quintal")
         
         # Price Range
         st.markdown(f"**Price Range:** ₹{min_price} - ₹{max_price}")
         
-        # Market Info
-        st.markdown(f"**Market:** {market_info}, {selected_state}")
+        # ===== 📈 PRICE FORECAST CHART =====
+        st.markdown("### 📈 Price Forecast (Next 35 Days)")
         
-        # ===== PRICE FORECAST CHART =====
-        st.markdown("### Price Forecast (Sample)")
-        
-        # Generate forecast data (next 35 days)
-        historical_prices = [int(current_price * (1 - 0.008 * i)) for i in range(30, 0, -1)]
-        random_forest_result = predict_price_ml(historical_prices, days=35)
-        
-        # Create forecast values
-        predicted_price = random_forest_result['predicted_price']
-        trend_direction = random_forest_result.get('trend', 'stable')
-        
-        # Generate forecast prices (35 days)
-        if trend_direction == 'increasing':
-            price_increase = (predicted_price - current_price) / 35
-            forecast_prices = [int(current_price + price_increase * i) for i in range(35)]
-        elif trend_direction == 'decreasing':
-            price_decrease = (current_price - predicted_price) / 35
-            forecast_prices = [int(current_price - price_decrease * i) for i in range(35)]
-        else:
-            forecast_prices = [current_price] * 35
-        
-        # Combine historical and forecast - only show forecast (days 0-35)
-        all_days = list(range(35))
-        
-        # Create line chart - simple format as user requested
+        # Create line chart
         fig = go.Figure()
         
-        # Forecast prices (next 35 days) - starting from day 0
         fig.add_trace(go.Scatter(
             x=all_days,
             y=forecast_prices,
             mode='lines+markers',
             name='Price',
             line=dict(color='#4CAF50', width=3),
-            marker=dict(size=8)
+            marker=dict(size=6)
         ))
         
+        # Add current price line
+        fig.add_hline(y=current_price, line_dash="dash", line_color="gray", 
+                      annotation=f"Current: ₹{current_price}")
+        
         fig.update_layout(
-            xaxis_title="Days",
-            yaxis_title="Price (₹)",
+            xaxis_title="Days from Now",
+            yaxis_title="Price (₹/quintal)",
             plot_bgcolor="white",
             font=dict(size=12),
             hovermode="x unified",
+            height=300,
             yaxis=dict(
                 tickformat="₹,",
                 range=[min(forecast_prices) * 0.9, max(forecast_prices) * 1.1]
@@ -2944,6 +2986,35 @@ elif menu == get_text("menu_price", global_lang):
         )
         
         st.plotly_chart(fig, use_container_width=True)
+        
+        # ===== 🏆 BEST MARKET =====
+        if not crop_prices.empty:
+            market_prices = crop_prices[['Market', 'Modal_x0020_Price', 'District']].drop_duplicates(subset=['Market'])
+            best_market_row = market_prices.loc[market_prices['Modal_x0020_Price'].idxmax()]
+            
+            st.markdown(f"""
+            <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); padding: 20px; border-radius: 15px; margin: 15px 0; text-align: center;">
+                <h3 style="color: white; margin: 0;">🏆 Best Market to Sell</h3>
+                <h2 style="color: white; margin: 10px 0;">{best_market_row['Market']}</h2>
+                <p style="color: white; font-size: 18px;">💰 ₹{int(best_market_row['Modal_x0020_Price'])}/quintal</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Show all markets
+            st.markdown(f"### 📍 All Markets in {selected_state}")
+            total_markets = len(market_prices)
+            st.markdown(f"**Total markets:** {total_markets}")
+            
+            # Market list
+            market_list = market_prices.sort_values('Modal_x0020_Price', ascending=False).reset_index(drop=True)
+            for idx, row in market_list.head(10).iterrows():
+                if idx == 0:
+                    emoji = "🥇"
+                elif idx == 1:
+                    emoji = "🥈"
+                else:
+                    emoji = "🥉"
+                st.write(f"{emoji} **{row['Market']}**: ₹{int(row['Modal_x0020_Price'])}/quintal")
         
         if not crop_prices.empty:
             # Show price data with increases/decreases for selected crop and state
