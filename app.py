@@ -4786,135 +4786,62 @@ elif menu == get_text("menu_emotion", global_lang):
     
     st.markdown("---")
     
-    # Two column layout: Chat + Sidebar
-    chat_col, side_col = st.columns([3, 1])
+    # Chat section
+    st.subheader("💬 AgriCare AI Chat")
     
-    with chat_col:
-        st.markdown("### 💬 Chat")
-        
-        # Show welcome if no messages
-        if not st.session_state.get('emotion_messages', []):
-            st.info(f"👋 Namaste, {farmer_name}! Ask me about farming or share how you're feeling.")
-        
-        # Input area - chat style with voice icon
-        st.markdown("### 💬 Chat")
-        
-        # Display messages first
-        all_messages = st.session_state.get('emotion_messages', [])
-        for chat in all_messages[-20:]:
-            timestamp = chat.get('timestamp', datetime.now())
-            if isinstance(timestamp, str):
-                timestamp = datetime.fromisoformat(timestamp)
-            time_str = timestamp.strftime("%H:%M")
-            
-            emotion = chat.get('emotion', 'happy')
-            emoji = {"happy": "😊", "sad": "😔", "angry": "😠", "high_risk": "🚨"}.get(emotion, "💚")
-            
-            # User message
-            st.markdown(f"""
-            <div style="display: flex; justify-content: flex-end; margin: 8px 0;">
-                <div style="background: #DCF8C6; padding: 10px 15px; border-radius: 15px 15px 5px 15px; max-width: 80%;">
-                    {chat['user']}
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # Bot message
-            st.markdown(f"""
-            <div style="display: flex; justify-content: flex-start; margin: 8px 0;">
-                <div style="background: white; border: 1px solid #ddd; padding: 10px 15px; border-radius: 15px 15px 15px 5px; max-width: 80%;">
-                    <span style="font-size: 12px;">{emoji} </span>{chat['bot']}
-                    <div style="font-size: 10px; color: #999; margin-top: 3px;">{time_str}</div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        # Input area
-        with st.form("agri_chat_form"):
-            col_mic, col_input, col_btn = st.columns([1, 5, 1])
-            
-            with col_mic:
-                st.form_submit_button("🎤", help="Click to speak")
-            
-            with col_input:
-                user_input = st.text_input(
-                    "Type a message...", 
-                    placeholder="Ask me anything about farming...",
-                    key="agri_msg_input",
-                    label_visibility="collapsed"
-                )
-            
-            with col_btn:
-                submit_btn = st.form_submit_button("📤", help="Send")
-        
-        # Handle send
-        if submit_btn and user_input and user_input.strip():
-            detected_emotion = detect_emotion(user_input)
-            
+    # Initialize chat history
+    if "emotion_messages" not in st.session_state:
+        st.session_state.emotion_messages = []
+    
+    # Display messages
+    messages = st.session_state.get('emotion_messages', [])
+    
+    # Show welcome if no messages
+    if not messages:
+        st.info(f"👋 Namaste, {farmer_name}! Type a message below to start chatting.")
+    
+    for chat in messages:
+        st.markdown(f"**You:** {chat.get('user', '')}")
+        emoji = {"happy": "😊", "sad": "😔", "angry": "😠", "high_risk": "🚨"}.get(chat.get('emotion', 'happy'), "💚")
+        st.markdown(f"{emoji} **AI:** {chat.get('bot', '')}")
+        st.markdown("---")
+    
+    # Input
+    st.markdown("**Type your message:**")
+    user_input = st.text_input("Message", key="chat_input", label_visibility="collapsed", placeholder="Ask about farming...")
+    
+    # Send button
+    if st.button("📤 Send Message", type="primary"):
+        if user_input.strip():
             # Get response
-            bot_response = get_chatgpt_style_fallback(detected_emotion, global_lang, farmer_profile, user_input, st.session_state.emotion_messages)
+            response = get_chatgpt_style_fallback("happy", global_lang, farmer_profile, user_input, messages)
             
             # Add to messages
             st.session_state.emotion_messages.append({
                 "user": user_input,
-                "bot": bot_response,
-                "emotion": detected_emotion,
+                "bot": response,
+                "emotion": "happy",
                 "timestamp": datetime.now()
             })
-            
-            # Auto emergency alert if high_risk
-            if detected_emotion == "high_risk":
-                family1 = farmer_profile.get('family1', {})
-                family2 = farmer_profile.get('family2', {})
-                emergency_msg = f"🚨 URGENT: Farmer {farmer_profile.get('name', 'Farmer')} needs emotional support. - AgriCare AI"
-                st.error("🚨 Emergency Alert Sent to Family Members!")
-                
-                # Send WhatsApp if configured
-                callmebot_api_key = os.getenv('CALLMEBOT_API_KEY')
-                if callmebot_api_key and callmebot_api_key != 'your_callmebot_api_key_here':
-                    try:
-                        if family1.get('phone'):
-                            phone = family1['phone'].replace('+', '').replace(' ', '')
-                            url = f"https://api.callmebot.com/whatsapp.php?phone={phone}&text={requests.utils.quote(emergency_msg)}&apikey={callmebot_api_key}"
-                            requests.get(url, timeout=10)
-                        if family2.get('phone'):
-                            phone = family2['phone'].replace('+', '').replace(' ', '')
-                            url = f"https://api.callmebot.com/whatsapp.php?phone={phone}&text={requests.utils.quote(emergency_msg)}&apikey={callmebot_api_key}"
-                            requests.get(url, timeout=10)
-                    except:
-                        pass
             
             # Save to database
             try:
                 database.save_chat_message(
                     farmer_id=st.session_state.get('current_farmer_id', 1),
                     user_message=user_input,
-                    bot_response=bot_response,
-                    emotion=detected_emotion,
+                    bot_response=response,
+                    emotion="happy",
                     language=global_lang
                 )
             except:
                 pass
             
             st.rerun()
-        
-        # Clear chat button
-        if st.button("🗑️ Clear Chat"):
-            # Clear session state
-            st.session_state.agri_history = []
-            st.session_state.emotion_messages = []
-            
-            # Clear database
-            try:
-                farmer_id = st.session_state.get('current_farmer_id', 1)
-                database.clear_chat_history(farmer_id)
-            except Exception as e:
-                print(f"Error clearing chat from database: {e}")
-            
-            st.rerun()
     
-    # Right sidebar
-    with side_col:
+    # Clear button
+    if st.button("🗑️ Clear Chat"):
+        st.session_state.emotion_messages = []
+        st.rerun()
         st.markdown("### 🧠 Your Status")
         
         # Emotion indicator
