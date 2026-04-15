@@ -804,6 +804,7 @@ ui_translations = {
         "menu_disease": "Disease Detection",
         "menu_emotion": "AgriCare AI",
         "menu_emergency": "Emergency Alert",
+        "menu_schemes": "Govt Schemes",
         "farmer_profile": "Farmer Profile Setup",
         "farmer_name": "Farmer Name",
         "age": "Age",
@@ -879,6 +880,7 @@ ui_translations = {
         "menu_weather": "मौसम",
         "menu_emotion": "भावनात्मक सहायता",
         "menu_emergency": "आपातकालीन अलर्ट",
+        "menu_schemes": "सरकारी योजनाएं",
         "farmer_profile": "किसान प्रोफाइल सेटअप",
         "farmer_name": "किसान का नाम",
         "age": "आयु",
@@ -954,6 +956,7 @@ ui_translations = {
         "menu_weather": "வானிலை",
         "menu_emotion": "உணர்வு ஆதரவு",
         "menu_emergency": "அவசர எச்சரிக்கை",
+        "menu_schemes": " அரசு திட்டங்கள்",
         "farmer_profile": "விவசாயி சுயவிவர அமைப்பு",
         "farmer_name": "விவசாயி பெயர்",
         "age": "வயது",
@@ -2018,7 +2021,9 @@ menu_options = [
     get_text("menu_price", global_lang),
     get_text("menu_weather", global_lang),
     get_text("menu_disease", global_lang),
-    get_text("menu_emotion", global_lang)
+    get_text("menu_emotion", global_lang),
+    get_text("menu_schemes", global_lang),
+    get_text("menu_emergency", global_lang)
 ]
 menu = st.sidebar.radio(
     get_text("select_language", global_lang),
@@ -4942,6 +4947,88 @@ elif menu == get_text("menu_emergency", global_lang):
         st.warning(alert_msg)
         st.balloons()
 
+
+# ---------------------------
+# Government Schemes
+# ---------------------------
+elif menu == get_text("menu_schemes", global_lang):
+    st.markdown("🏛️ **Government Schemes for Farmers**")
+    st.markdown("---")
+    
+    # Government schemes data
+    schemes = [
+        {
+            "name": "PM-KISAN",
+            "description": "Direct income support of ₹6,000/year to farmer families",
+            "eligibility": "All landholding farmer families",
+            "benefit": "₹6,000/year (₹2,000 every 4 months)",
+            "apply": "pmkisan.gov.in"
+        },
+        {
+            "name": "Kisan Credit Card (KCC)",
+            "description": "Easy credit for farming needs at low interest rates",
+            "eligibility": "All farmers - individual/joint borrowers",
+            "benefit": "Credit up to ₹3 lakh at 4% interest",
+            "apply": "Nearest bank"
+        },
+        {
+            "name": "Pradhan Mantri Fasal Bima Yojana (PMFBY)",
+            "description": "Crop insurance scheme for crop loss due to natural calamities",
+            "eligibility": "All farmers including sharecropers",
+            "benefit": "Crop loss compensation",
+            "apply": "pmfby.gov.in"
+        },
+        {
+            "name": "Soil Health Card",
+            "description": "Free soil testing and health cards for farmers",
+            "eligibility": "All farmers",
+            "benefit": "Soil test report with fertilizer recommendations",
+            "apply": "Local agriculture office"
+        },
+        {
+            "name": "Fasal Loan Waiver",
+            "description": "Loan waiver for farmers in distress",
+            "eligibility": "Small and marginal farmers",
+            "benefit": "Crop loan waiver",
+            "apply": "State government portal"
+        },
+        {
+            "name": "Agriculture Infrastructure Fund",
+            "description": "Loan for building farm infrastructure",
+            "eligibility": "FPOs, agri-entrepreneurs, private companies",
+            "benefit": "Loan up to ₹2 crore at 3% interest",
+            "apply": "Bank/Online portal"
+        },
+        {
+            "name": "National Agriculture Market (eNAM)",
+            "description": "Online trading platform for agricultural produce",
+            "eligibility": "All farmers and traders",
+            "benefit": "Better price discovery, direct sale",
+            "apply": "enomnic.in"
+        },
+        {
+            "name": "Sub-Mission on Agricultural Mechanization",
+            "description": "Subsidy on agricultural machinery",
+            "eligibility": "All farmers",
+            "benefit": "40-50% subsidy on farm equipment",
+            "apply": "Local tractor dealer"
+        }
+    ]
+    
+    # Display schemes
+    for i, scheme in enumerate(schemes, 1):
+        with st.expander(f"🏅 {scheme['name']}"):
+            st.markdown(f"""
+            <div style="background: #f0f8f0; padding: 15px; border-radius: 10px;">
+                <p><strong>📝 Description:</strong> {scheme['description']}</p>
+                <p><strong>✅ Eligibility:</strong> {scheme['eligibility']}</p>
+                <p><strong>💰 Benefit:</strong> {scheme['benefit']}</p>
+                <p><strong>📨 How to Apply:</strong> {scheme['apply']}</p>
+            </div>
+            """, unsafe_allow_html=True)
+    
+    st.markdown("---")
+    st.info("💡 For more schemes, visit your nearest Agricultural Office or check state government websites.")
 
 # ============================================================
 # 🎙️ VOICE ASSISTANT
