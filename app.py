@@ -2606,30 +2606,6 @@ elif menu == get_text("menu_crop_rec", global_lang):
             </div>
             """, unsafe_allow_html=True)
         
-        # === DETAILED CROP CARDS ===
-        st.markdown("---")
-        st.markdown("### 📋 Detailed Crop Analysis")
-        
-        for crop in crop_decisions:
-            # Get full profit info
-            profit_info = CROP_PROFIT_INFO.get(crop['name'], {})
-            
-            st.markdown(f"""
-            <div style="background-color: #f0f8ff; padding: 20px; border-radius: 15px; margin: 15px 0; border: 2px solid #28a745;">
-                <h3 style="color: #28a745; margin-top: 0;">🌾 {crop['name']}</h3>
-                <table style="width: 100%;">
-                    <tr><td><strong>📊 ML Confidence:</strong></td><td>{crop['confidence']:.1f}%</td></tr>
-                    <tr><td><strong>💰 Estimated Profit:</strong></td><td>₹{crop['profit']:,}/acre</td></tr>
-                    <tr><td><strong>⏳ Duration:</strong></td><td>{crop['duration']}</td></tr>
-                    <tr><td><strong>📅 Harvest:</strong></td><td>{crop['harvest']}</td></tr>
-                    <tr><td><strong>💵 Market Price:</strong></td><td>{crop['market_value']}</td></tr>
-                    <tr><td><strong>💧 Water Need:</strong></td><td>{crop['water']}</td></tr>
-                    <tr><td><strong>⚠️ Risk Level:</strong></td><td>{crop['risk']}</td></tr>
-                    <tr><td><strong>📈 Demand:</strong></td><td>{crop['demand']}</td></tr>
-                </table>
-            </div>
-            """, unsafe_allow_html=True)
-
         # Risk Warnings based on inputs
         st.write("### ⚠️ Risk Warnings")
         
