@@ -4821,7 +4821,18 @@ elif menu == get_text("menu_emotion", global_lang):
             </div>
             """, unsafe_allow_html=True)
         
-        # Input area - chat style
+        # Input area - chat style with voice
+        st.markdown("### 💬 Chat")
+        
+        # Voice input using Streamlit's built-in audio_input
+        try:
+            audio_data = st.audio_input("🎤 Click to speak (or type below):", key="agri_audio")
+            if audio_data:
+                st.success("🎤 Voice detected! Type your message or click send.")
+        except Exception as e:
+            # Audio input not available, show info
+            st.info("💡 Tip: Use Voice Assistant page for voice commands")
+        
         with st.form("agri_chat_form", clear_on_submit=True):
             col_input, col_btn = st.columns([5, 1])
             with col_input:
