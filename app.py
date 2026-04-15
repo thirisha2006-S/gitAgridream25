@@ -4806,37 +4806,47 @@ elif menu == get_text("menu_emotion", global_lang):
         st.markdown(f"{emoji} **AI:** {chat.get('bot', '')}")
         st.markdown("---")
     
-    # Input
+    # Input - using form for Enter key support
     st.markdown("**Type your message:**")
-    user_input = st.text_input("Message", key="chat_input", label_visibility="collapsed", placeholder="Ask about farming...")
     
-    # Send button
-    if st.button("📤 Send Message", type="primary"):
-        if user_input.strip():
-            # Get response
+    with st.form(key="chat_form", clear_on_submit=True):
+        user_input = st.text_input(
+            "Message", 
+            key=f"chat_input_{len(messages)}", 
+            label_visibility="collapsed", 
+            placeholder="Type message and press Enter..."
+        )
+        submit_button = st.form_submit_button(label="📤 Send")
+    
+    # Handle send (both Enter and button click)
+    if submit_button and user_input.strip():
+        # Get response from Cohere API (or fallback)
+        try:
+            response = get_cohere_response(user_input, "happy", global_lang, farmer_profile, messages)
+        except:
             response = get_chatgpt_style_fallback("happy", global_lang, farmer_profile, user_input, messages)
-            
-            # Add to messages
-            st.session_state.emotion_messages.append({
-                "user": user_input,
-                "bot": response,
-                "emotion": "happy",
-                "timestamp": datetime.now()
-            })
-            
-            # Save to database
-            try:
-                database.save_chat_message(
-                    farmer_id=st.session_state.get('current_farmer_id', 1),
-                    user_message=user_input,
-                    bot_response=response,
-                    emotion="happy",
-                    language=global_lang
-                )
-            except:
-                pass
-            
-            st.rerun()
+        
+        # Add to messages
+        st.session_state.emotion_messages.append({
+            "user": user_input,
+            "bot": response,
+            "emotion": "happy",
+            "timestamp": datetime.now()
+        })
+        
+        # Save to database
+        try:
+            database.save_chat_message(
+                farmer_id=st.session_state.get('current_farmer_id', 1),
+                user_message=user_input,
+                bot_response=response,
+                emotion="happy",
+                language=global_lang
+            )
+        except:
+            pass
+        
+        st.rerun()
     
     # Clear button
     if st.button("🗑️ Clear Chat"):
