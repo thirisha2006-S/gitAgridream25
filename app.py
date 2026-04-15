@@ -2022,8 +2022,7 @@ menu_options = [
     get_text("menu_weather", global_lang),
     get_text("menu_disease", global_lang),
     get_text("menu_emotion", global_lang),
-    get_text("menu_schemes", global_lang),
-    get_text("menu_emergency", global_lang)
+    get_text("menu_schemes", global_lang)
 ]
 menu = st.sidebar.radio(
     get_text("select_language", global_lang),
@@ -4921,32 +4920,6 @@ elif menu == get_text("menu_emotion", global_lang):
         st.write("🧠 iCall: 9152987821")
         st.write("🚔 Police: 100")
         st.write("🌾 Kisan: 1800-180-1551")
-
-# ---------------------------
-# Emergency Alert
-# ---------------------------
-elif menu == get_text("menu_emergency", global_lang):
-    st.subheader("🚨 " + get_text("emergency_alert", global_lang))
-    if "farmer_profile" in st.session_state:
-        profile = st.session_state.farmer_profile
-        st.write(f"**{get_text('farmer', global_lang)}:** {profile['name']} (Age: {profile['age']})")
-        st.write(f"**{get_text('emergency_contacts', global_lang)}:**")
-        st.write(f"- {profile['family1']['name']}: {profile['family1']['phone']}")
-        st.write(f"- {profile['family2']['name']}: {profile['family2']['phone']}")
-
-    location = st.text_input(get_text("location", global_lang))
-    lang_choice = st.selectbox(get_text("select_language", global_lang), languages, key="alert_lang")
-
-    if st.button(get_text("send_alert", global_lang)):
-        if "farmer_profile" in st.session_state:
-            name = st.session_state.farmer_profile["name"]
-        else:
-            name = "Farmer"
-        base_msg = f"⚠ Emergency Alert for 👨‍🌾 {name} at 📍 {location}!"
-        alert_msg = emotion_translations.get(lang_choice, lambda x:x)(base_msg)
-        st.warning(alert_msg)
-        st.balloons()
-
 
 # ---------------------------
 # Government Schemes
