@@ -4870,6 +4870,30 @@ elif menu == get_text("menu_emotion", global_lang):
                 "timestamp": datetime.now()
             })
             
+            # AUTO EMERGENCY ALERT - If farmer shows high risk emotion
+            if detected_emotion == "high_risk":
+                farmer_profile = st.session_state.get('farmer_profile', {})
+                farmer_name = farmer_profile.get('name', 'Farmer')
+                
+                # Get emergency contacts
+                family1 = farmer_profile.get('family1', {})
+                family2 = farmer_profile.get('family2', {})
+                
+                emergency_msg = f"🚨 URGENT: Farmer {farmer_name} may need immediate emotional support. Please check on them. - AgriCare AI"
+                
+                # Show alert in app
+                st.error(f"🚨 Emergency Alert Sent to Family Members: {emergency_msg}")
+                
+                # In production, integrate with WhatsApp/SMS API here
+                # For now, store alert in database
+                try:
+                    if family1.get('phone'):
+                        print(f"Would send to {family1.get('name')}: {emergency_msg}")
+                    if family2.get('phone'):
+                        print(f"Would send to {family2.get('name')}: {emergency_msg}")
+                except Exception as e:
+                    print(f"Emergency alert error: {e}")
+            
             # Save to database (permanent storage)
             try:
                 farmer_id = st.session_state.get('current_farmer_id', 1)

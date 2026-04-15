@@ -904,5 +904,23 @@ def clear_chat_history(farmer_id: int) -> bool:
         conn.close()
 
 
+def log_emergency_alert(farmer_id: int, message: str, contact_name: str, contact_phone: str) -> int:
+    """Log emergency alert sent to family member."""
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO chat_history (farmer_id, user_message, bot_response, emotion, language)
+            VALUES (?, ?, ?, ?, ?)
+        """, (farmer_id, f"EMERGENCY: {message}", f"Alert sent to {contact_name} ({contact_phone})", "high_risk", "system"))
+        conn.commit()
+        return cursor.lastrowid
+    except sqlite3.Error as e:
+        print(f"Error logging emergency alert: {e}")
+        return -1
+    finally:
+        conn.close()
+
+
 if __name__ == "__main__":
     test_database()
