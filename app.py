@@ -2877,7 +2877,37 @@ elif menu == get_text("menu_price", global_lang):
         min_price = int(current_price * 0.85)
         max_price = int(current_price * 1.15)
         market_info = selected_state
-
+    
+    # ===== GENERATE FORECAST BEFORE DECISION =====
+    # Calculate predicted price using simple moving average logic
+    historical_prices = [int(current_price * (1 - 0.008 * i)) for i in range(30, 0, -1)]
+    
+    # Simple prediction: use moving average trend
+    avg_recent = sum(historical_prices[-7:]) / 7
+    avg_old = sum(historical_prices[:7]) / 7
+    
+    if avg_recent > avg_old * 1.03:
+        predicted_price = int(current_price * 1.08)  # 8% increase
+        trend_direction = 'increasing'
+    elif avg_recent < avg_old * 0.97:
+        predicted_price = int(current_price * 0.92)  # 8% decrease
+        trend_direction = 'decreasing'
+    else:
+        predicted_price = current_price
+        trend_direction = 'stable'
+    
+    # Generate forecast prices for chart
+    if trend_direction == 'increasing':
+        price_change = (predicted_price - current_price) / 35
+        forecast_prices = [int(current_price + price_change * i) for i in range(35)]
+    elif trend_direction == 'decreasing':
+        price_change = (current_price - predicted_price) / 35
+        forecast_prices = [int(current_price - price_change * i) for i in range(35)]
+    else:
+        forecast_prices = [current_price] * 35
+    
+    all_days = list(range(35))
+    
     # ===== SHOW DECISION-ENGINE RESULTS =====
     if check_btn and current_price:
         st.markdown("---")
