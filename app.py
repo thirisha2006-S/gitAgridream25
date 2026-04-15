@@ -2470,54 +2470,66 @@ elif menu == get_text("menu_crop_rec", global_lang):
         
         for i, (crop, conf) in enumerate(zip(recommended_crops, confidences), 1):
             crop_key = crop.title()
-            if crop_key in CROP_PROFIT_INFO:
-                profit = CROP_PROFIT_INFO[crop_key]
-                
-                # Calculate estimated profit (simple formula)
-                price = int(''.join(filter(str.isdigit, profit.get('market_value', '2000').split('-')[0]))) or 2000
-                # Yield estimate: 20-40 quintal/acre depending on crop
-                yield_est = {"Rice": 30, "Wheat": 25, "Maize": 35, "Cotton": 15, "Tomato": 40}.get(crop_key, 25)
-                cost = int(''.join(filter(str.isdigit, profit.get('initial_cost', '15000').split('-')[0]))) or 15000
-                estimated_profit = (price * yield_est) - cost
-                
-                # Risk calculation
-                risk_score = 0
-                if profit['risk']['water'] == 'High': risk_score += 2
-                if profit['risk']['water'] == 'Medium': risk_score += 1
-                if profit['risk']['pest'] == 'High': risk_score += 2
-                if profit['risk']['pest'] == 'Medium': risk_score += 1
-                
-                if risk_score >= 3:
-                    risk_level = "🔴 High"
-                elif risk_score >= 1:
-                    risk_level = "🟡 Medium"
-                else:
-                    risk_level = "🟢 Low"
-                
-                # Demand calculation (based on market value trends)
-                if profit['profit_outlook'] == 'High':
-                    demand = "📈 High"
-                elif profit['profit_outlook'] == 'Medium':
-                    demand = "📊 Medium"
-                else:
-                    demand = "📉 Low"
-                
-                # Duration
-                duration_str = profit.get('growth_period', '120 days')
-                
-                crop_decisions.append({
-                    'rank': i,
-                    'name': crop_key,
-                    'confidence': conf,
-                    'profit': estimated_profit,
-                    'risk': risk_level,
-                    'demand': demand,
-                    'duration': duration_str,
-                    'water': profit.get('water_need', 'Medium'),
-                    'market_value': profit.get('market_value', '₹2000/quintal'),
-                    'harvest': profit.get('harvest_month', 'TBD'),
-                    'reasons': reasoning.get(crop, {}).get('reasons', ['Suitable for your conditions'])
-                })
+            profit = CROP_PROFIT_INFO.get(crop_key, {})
+            
+            # If no profit info exists, create default values
+            if not profit:
+                profit = {
+                    'market_value': '₹2,000/quintal',
+                    'profit_outlook': 'Medium',
+                    'growth_period': '120 days',
+                    'harvest_month': 'Seasonal',
+                    'initial_cost': '₹15,000/acre',
+                    'water_need': 'Medium',
+                    'risk': {'water': 'Medium', 'pest': 'Medium'},
+                    'income_timing': '4 months'
+                }
+            
+            # Calculate estimated profit (simple formula)
+            price = int(''.join(filter(str.isdigit, profit.get('market_value', '2000').split('-')[0]))) or 2000
+            # Yield estimate: 20-40 quintal/acre depending on crop
+            yield_est = {"Rice": 30, "Wheat": 25, "Maize": 35, "Cotton": 15, "Tomato": 40, "Potato": 25, "Onion": 30}.get(crop_key, 25)
+            cost = int(''.join(filter(str.isdigit, profit.get('initial_cost', '15000').split('-')[0]))) or 15000
+            estimated_profit = (price * yield_est) - cost
+            
+            # Risk calculation
+            risk_score = 0
+            if profit['risk']['water'] == 'High': risk_score += 2
+            if profit['risk']['water'] == 'Medium': risk_score += 1
+            if profit['risk']['pest'] == 'High': risk_score += 2
+            if profit['risk']['pest'] == 'Medium': risk_score += 1
+            
+            if risk_score >= 3:
+                risk_level = "🔴 High"
+            elif risk_score >= 1:
+                risk_level = "🟡 Medium"
+            else:
+                risk_level = "🟢 Low"
+            
+            # Demand calculation (based on market value trends)
+            if profit['profit_outlook'] == 'High':
+                demand = "📈 High"
+            elif profit['profit_outlook'] == 'Medium':
+                demand = "📊 Medium"
+            else:
+                demand = "📉 Low"
+            
+            # Duration
+            duration_str = profit.get('growth_period', '120 days')
+            
+            crop_decisions.append({
+                'rank': i,
+                'name': crop_key,
+                'confidence': conf,
+                'profit': estimated_profit,
+                'risk': risk_level,
+                'demand': demand,
+                'duration': duration_str,
+                'water': profit.get('water_need', 'Medium'),
+                'market_value': profit.get('market_value', '₹2000/quintal'),
+                'harvest': profit.get('harvest_month', 'TBD'),
+                'reasons': reasoning.get(crop, {}).get('reasons', ['Suitable for your conditions'])
+            })
         
         # Sort by profit (highest first)
         crop_decisions.sort(key=lambda x: x['profit'], reverse=True)
