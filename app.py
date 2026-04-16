@@ -3951,13 +3951,14 @@ elif menu == get_text("menu_disease", global_lang):
                                 import base64
                                 
                                 # Encode image to base64
-                                import base64
                                 img_base64 = base64.b64encode(image_bytes).decode('utf-8')
                                 
-                                # Call Plant.id API
+                                # Plant.id API key
+                                PLANT_ID_API_KEY = os.getenv('PLANT_ID_API_KEY', 'LiobPhyMKoo9i5L0oR8otFzxRgo5FuDzcMWFIaXn1JBwVyMAFv')
+                                
                                 headers = {
                                     'Content-Type': 'application/json',
-                                    'Api-Key': 'demo'  # Demo key for testing
+                                    'Api-Key': PLANT_ID_API_KEY
                                 }
                                 
                                 data = {
@@ -3995,9 +3996,8 @@ elif menu == get_text("menu_disease", global_lang):
                                         else:
                                             st.warning("⚠️ Disease detected - see treatment below")
                                         
-                                        # Get treatment
                                         st.markdown("### 💊 Recommended Treatment")
-                                        st.info("Consult local agricultural officer for specific treatment. General: Remove infected leaves, apply appropriate fungicide, improve air circulation.")
+                                        st.info("Consult local agricultural officer. Remove infected leaves, apply appropriate fungicide, improve air circulation.")
                                         
                                         st.caption("🤖 Powered by Plant.id API")
                                     else:
@@ -4006,7 +4006,7 @@ elif menu == get_text("menu_disease", global_lang):
                                     raise Exception("API error")
                                     
                             except Exception as api_error:
-                                st.warning("API temporarily unavailable, using sample data")
+                                st.warning(f"API unavailable ({str(api_error)[:50]}), using sample data")
                                 
                                 # Fallback to sample data
                             import random
