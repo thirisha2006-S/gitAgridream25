@@ -2354,34 +2354,7 @@ if menu == get_text("menu_dashboard", global_lang):
         
         st.markdown("---")
         
-        # === 3. QUICK ACTION BUTTONS ===
-        st.markdown("### ⚡ Quick Actions")
-        action_cols = st.columns(4)
-        
-        with action_cols[0]:
-            if st.button("📈 Price Forecast", key="action_price"):
-                menu = st.session_state.get('menu', 'Price Forecasting')
-                if "Price" in menu:
-                    st.rerun()
-        with action_cols[1]:
-            if st.button("🌾 Crop Recommendation", key="action_crop"):
-                menu = st.session_state.get('menu', 'Crop Recommendation')
-                if "Crop" in menu:
-                    st.rerun()
-        with action_cols[2]:
-            if st.button("🦠 Detect Disease", key="action_disease"):
-                menu = st.session_state.get('menu', 'Disease Detection')
-                if "Disease" in menu:
-                    st.rerun()
-        with action_cols[3]:
-            if st.button("🌤️ View Weather", key="action_weather"):
-                menu = st.session_state.get('menu', 'Weather')
-                if "Weather" in menu:
-                    st.rerun()
-        
-        st.markdown("---")
-        
-        # === 4. BEST & WORST CROPS TODAY ===
+        # === 3. BEST & WORST CROPS TODAY ===
         col1, col2 = st.columns(2)
         
         with col1:
