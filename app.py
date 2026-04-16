@@ -2360,16 +2360,24 @@ if menu == get_text("menu_dashboard", global_lang):
         
         with action_cols[0]:
             if st.button("📈 Price Forecast", key="action_price"):
-                st.switch_page(get_text("menu_price", global_lang))
+                menu = st.session_state.get('menu', 'Price Forecasting')
+                if "Price" in menu:
+                    st.rerun()
         with action_cols[1]:
             if st.button("🌾 Crop Recommendation", key="action_crop"):
-                st.switch_page(get_text("menu_crop_rec", global_lang))
+                menu = st.session_state.get('menu', 'Crop Recommendation')
+                if "Crop" in menu:
+                    st.rerun()
         with action_cols[2]:
             if st.button("🦠 Detect Disease", key="action_disease"):
-                st.switch_page(get_text("menu_disease", global_lang))
+                menu = st.session_state.get('menu', 'Disease Detection')
+                if "Disease" in menu:
+                    st.rerun()
         with action_cols[3]:
             if st.button("🌤️ View Weather", key="action_weather"):
-                st.switch_page(get_text("menu_weather", global_lang))
+                menu = st.session_state.get('menu', 'Weather')
+                if "Weather" in menu:
+                    st.rerun()
         
         st.markdown("---")
         
