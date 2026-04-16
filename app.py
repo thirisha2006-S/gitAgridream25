@@ -4788,24 +4788,38 @@ elif menu == get_text("menu_emotion", global_lang):
     
     st.markdown("---")
     
-    # Chat section
-    st.subheader("💬 AgriCare AI Chat")
+    # Chat section - Using new UI modules
+    try:
+        from agridream_modules.ui_components import render_chat_header, render_chat_bubble, render_welcome_message
+        from agridream_modules.ai_module import get_cohere_response, detect_emotion, send_emergency_alert, get_fallback_response
+        
+        # Render chat header
+        render_chat_header(farmer_name)
+        
+    except ImportError:
+        st.markdown("## 🌾 AgriCare AI - Your Farming Companion")
     
     # Initialize chat history
     if "emotion_messages" not in st.session_state:
         st.session_state.emotion_messages = []
     
-    # Display messages
     messages = st.session_state.get('emotion_messages', [])
     
     # Show welcome if no messages
     if not messages:
-        st.info(f"👋 Namaste, {farmer_name}! Type a message below to start chatting.")
+        try:
+            render_welcome_message(farmer_name)
+        except:
+            st.info(f"👋 Namaste, {farmer_name}! Type a message below to start chatting.")
     
+    # Display messages with WhatsApp-style bubbles
     for chat in messages:
-        st.markdown(f"**You:** {chat.get('user', '')}")
-        emoji = {"happy": "😊", "sad": "😔", "angry": "😠", "high_risk": "🚨"}.get(chat.get('emotion', 'happy'), "💚")
-        st.markdown(f"{emoji} **AI:** {chat.get('bot', '')}")
+        try:
+            render_chat_bubble(chat.get('user', ''), is_user=True)
+            render_chat_bubble(chat.get('bot', ''), is_user=False, emotion=chat.get('emotion', 'happy'))
+        except:
+            st.markdown(f"**You:** {chat.get('user', '')}")
+            st.markdown(f"**AI:** {chat.get('bot', '')}")
         st.markdown("---")
     
     # Input - using form for Enter key support
@@ -4822,19 +4836,40 @@ elif menu == get_text("menu_emotion", global_lang):
     
     # Handle send (both Enter and button click)
     if submit_button and user_input.strip():
-        # Get response from Cohere API (or fallback)
+        # Detect emotion
         try:
-            response = get_cohere_response(user_input, "happy", global_lang, farmer_profile, messages)
+            detected_emotion = detect_emotion(user_input)
         except:
-            response = get_chatgpt_style_fallback("happy", global_lang, farmer_profile, user_input, messages)
+            detected_emotion = "happy"
+        
+        # Get response from AI (with better error handling)
+        try:
+            response = get_cohere_response(user_input, detected_emotion, global_lang, farmer_profile, messages)
+        except Exception as e:
+            print(f"AI Error: {e}")
+            try:
+                from agridream_modules.ai_module import get_fallback_response
+                response = get_fallback_response(user_input, detected_emotion)
+            except:
+                response = get_chatgpt_style_fallback(detected_emotion, global_lang, farmer_profile, user_input, messages)
         
         # Add to messages
         st.session_state.emotion_messages.append({
             "user": user_input,
             "bot": response,
-            "emotion": "happy",
+            "emotion": detected_emotion,
             "timestamp": datetime.now()
         })
+        
+        # Auto-send emergency alert if high risk detected
+        if detected_emotion == "high_risk":
+            family1_phone = st.session_state.get('family1_phone', '')
+            if family1_phone:
+                try:
+                    from agridream_modules.ai_module import send_emergency_alert
+                    send_emergency_alert(farmer_name, family1_phone, f"⚠️ Alert: {farmer_name} needs support. Please check on them.")
+                except:
+                    pass
         
         # Save to database
         try:
@@ -4842,7 +4877,7 @@ elif menu == get_text("menu_emotion", global_lang):
                 farmer_id=st.session_state.get('current_farmer_id', 1),
                 user_message=user_input,
                 bot_response=response,
-                emotion="happy",
+                emotion=detected_emotion,
                 language=global_lang
             )
         except:
