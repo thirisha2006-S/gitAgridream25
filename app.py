@@ -3944,8 +3944,7 @@ elif menu == get_text("menu_disease", global_lang):
                             st.caption("🤖 Powered by TensorFlow MobileNetV2 (Local AI)")
                             
                         except ImportError as e:
-                            st.warning("⚠️ TensorFlow not installed. Installing...")
-                            st.info("Please run: pip install tensorflow")
+                            st.info("🤖 Running in Demo Mode - showing sample results")
                             
                             # Fallback to demo
                             import random
