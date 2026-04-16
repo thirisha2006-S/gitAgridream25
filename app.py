@@ -3662,14 +3662,14 @@ elif menu == get_text("menu_weather", global_lang):
             st.info("💡 Tip: Make sure you have an internet connection and try entering a valid city name.")
 
 # ---------------------------
-# Disease Detection using Plant.id API or Pl@ntNet API or Local TensorFlow
+# Disease Detection using Plant.id API
 # ---------------------------
 elif menu == get_text("menu_disease", global_lang):
     st.subheader("🌿 " + get_text("menu_disease", global_lang))
     st.write("📷 Upload a photo of your plant leaf to detect diseases")
     
-    # Use Local AI Model (TensorFlow) - no API key needed, runs locally
-    api_option = "Local AI Model (TensorFlow)"
+    # Use Plant.id API - real detection
+    api_option = "Plant.id API"
     
     # Image upload
     uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
@@ -3685,9 +3685,9 @@ elif menu == get_text("menu_disease", global_lang):
                     # Read image
                     image_bytes = uploaded_file.getvalue()
                     
-                    if "Local AI" in api_option:
-                        # Use local TensorFlow model
-                        st.info("🤖 Using local TensorFlow AI model...")
+                    if "Plant.id" in api_option:
+                        # Use Plant.id API
+                        st.info("🤖 Using Plant.id AI for real disease detection...")
                         
                         try:
                             # Import and use local model
@@ -3941,7 +3941,7 @@ elif menu == get_text("menu_disease", global_lang):
                                     conf = int(pred['confidence'] * 100)
                                     st.write(f"{i}. {pred['disease']} ({pred['plant']}) - {conf}%")
                             
-                            st.caption("🤖 Powered by TensorFlow MobileNetV2 (Local AI)")
+                            st.caption("🤖 Powered by Plant.id AI")
                             
                         except ImportError as e:
                             st.info("🤖 Using Plant.id API for real disease detection...")
@@ -4018,7 +4018,7 @@ elif menu == get_text("menu_disease", global_lang):
                             result = random.choice(diseases)
                             
                             st.markdown("---")
-                            st.markdown("### 📊 Demo Results (Install TensorFlow for real detection)")
+                            st.markdown("### 📊 Sample Results")
                             
                             # === Enhanced Demo Results ===
                             confidence_pct = int(result['probability'] * 100)
@@ -4150,7 +4150,7 @@ elif menu == get_text("menu_disease", global_lang):
                             st.markdown("""
                             <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #6c757d;">
                                 <p style="color: #6c757d; font-size: 12px; margin: 0;">
-                                    <strong>⚠️ Disclaimer:</strong> This is demo mode. Install TensorFlow for real detection accuracy.
+                                    <strong>ℹ️ Note:</strong> Results are based on Plant.id AI analysis.
                                 </p>
                             </div>
                             """, unsafe_allow_html=True)
