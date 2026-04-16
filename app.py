@@ -5,18 +5,39 @@ import numpy as np
 import requests
 import os
 from dotenv import load_dotenv
+
 # Database module
 import database
-# from googletrans import Translator  # Replaced with translate library for stability
-from translate import Translator
-import openai
-import cohere
+
+# Translation - with try/except to allow deployment without it
+try:
+    from translate import Translator
+    TRANSLATE_AVAILABLE = True
+except:
+    Translator = None
+    TRANSLATE_AVAILABLE = False
+
+# AI APIs - with fallbacks
+try:
+    import openai as openai_module
+    OPENAI_AVAILABLE = True
+except:
+    openai_module = None
+    OPENAI_AVAILABLE = False
+
+try:
+    import cohere as cohere_module
+    COHERE_AVAILABLE = True
+except:
+    cohere_module = None
+    COHERE_AVAILABLE = False
+
 import plotly.express as px
 import plotly.graph_objects as go
-# Removed Twilio - using Deep AI instead
-# Removed Hugging Face transformers - using Deep AI instead
+
+# Flag for transformers (not required)
 TRANSFORMERS_AVAILABLE = False
-print("Using Deep AI for enhanced features")
+print("AgriDream starting...")
 
 # Initialize database on app start
 @st.cache_resource
@@ -101,13 +122,15 @@ def create_alert_for_user(farmer_id: int, alert_type: str, title: str,
 def safe_translate(text, src='en', dest='en'):
     """Safely translate text with error handling"""
     try:
+        if not TRANSLATE_AVAILABLE:
+            return text
         if src == dest:
             return text
         translator_obj = Translator(from_lang=src, to_lang=dest)
         return translator_obj.translate(text)
     except Exception as e:
         print(f"Translation error: {e}")
-        return text
+        return text  # Return original text if translation fails
 
 # Get language code function
 def get_lang_code(lang):
@@ -1042,8 +1065,9 @@ base_responses = {
     "high_risk": "I'm really concerned about you. Please reach out to someone you trust or call a helpline. You're not alone! 📞"
 }
 
-# Initialize OpenAI client
-openai.api_key = os.getenv('OPENAI_API_KEY')
+# Initialize OpenAI client (if available)
+if OPENAI_AVAILABLE:
+    openai_module.api_key = os.getenv('OPENAI_API_KEY')
 
 # Removed Twilio client - using CallMeBot for WhatsApp messaging
 # CallMeBot credentials will be loaded when needed
