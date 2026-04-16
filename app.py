@@ -567,8 +567,8 @@ ALL_STATES_MARKET_DATA = {
         'Lunglei': {'Orange': 3600, 'Mango': 4600, 'Rice': 2400, 'Bamboo': 4800, 'Turmeric': 9500}
     },
     'Nagaland': {
-        'Kohima': {'Rice': 2550, 'Maize': 1850, 'Pork': 350, 'Chilli': 4500, 'Cabbage': 1400, 'Naga Chilli': 5000},
-        'Dimapur': {'Rice': 2500, 'Maize': 1800, 'Pork': 340, 'Chilli': 4400, 'Cabbage': 1350}
+        'Kohima': {'Rice': 2550, 'Maize': 1850, 'Chilli': 4500, 'Cabbage': 1400, 'Naga Chilli': 5000},
+        'Dimapur': {'Rice': 2500, 'Maize': 1800, 'Chilli': 4400, 'Cabbage': 1350}
     },
     'Odisha': {
         'Bhubaneswar': {'Rice': 2300, 'Sugarcane': 2900, 'Mustard': 5400, 'Cashew': 9000, 'Turmeric': 10500, 'Coconut': 3500},
@@ -674,7 +674,7 @@ ALL_STATES_PRICES = {
     'Manipur': {'Rice': 2500, 'Mustard': 5200, 'Tomato': 1400, 'Cabbage': 1600, 'Potato': 1300},
     'Meghalaya': {'Apple': 8800, 'Orange': 4200, 'Rice': 2400, 'Maize': 1700, 'Ginger': 9500},
     'Mizoram': {'Orange': 3800, 'Mango': 4800, 'Rice': 2450, 'Bamboo': 5000, 'Turmeric': 10000},
-    'Nagaland': {'Rice': 2550, 'Maize': 1850, 'Pork': 350, 'Chilli': 4500, 'Cabbage': 1400},
+    'Nagaland': {'Rice': 2550, 'Maize': 1850, 'Chilli': 4500, 'Cabbage': 1400},
     'Odisha': {'Rice': 2300, 'Sugarcane': 2900, 'Mustard': 5400, 'Cashew': 9000, 'Turmeric': 10500},
     'Punjab': {'Wheat': 2275, 'Cotton': 6800, 'Sugarcane': 3150, 'Mustard': 5900, 'Barley': 1850},
     'Rajasthan': {'Mustard': 5700, 'Cotton': 6900, 'Groundnut': 5300, 'Wheat': 2200, 'Barley': 1800},
