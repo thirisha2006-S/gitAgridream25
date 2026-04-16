@@ -2270,6 +2270,10 @@ if menu == get_text("menu_dashboard", global_lang):
         # Get unique commodities to validate crop selection
         available_crops = df_prices['Commodity'].unique().tolist() if 'Commodity' in df_prices.columns else []
         
+        # Filter out livestock (keep only crops/vegetables)
+        excluded_crops = ['Pigs', 'Pork', 'Goat', 'Sheep', 'Chicken', 'Eggs', 'Fish']
+        available_crops = [c for c in available_crops if c not in excluded_crops]
+        
         # Map common crop names to actual commodity names in dataset
         crop_name_mapping = {
             'Rice': ['Paddy(Dhan)(Common)', 'Rice', 'Paddy'],
@@ -2984,9 +2988,10 @@ elif menu == get_text("menu_price", global_lang):
         
         # Add fallback crops from ALL_STATES_PRICES
         fallback_crops = []
+        excluded_crops = ['Pigs', 'Pork', 'Goat', 'Sheep', 'Chicken', 'Eggs', 'Fish']  # Exclude livestock
         for state_name, crops in ALL_STATES_PRICES.items():
             for crop_name in crops.keys():
-                if crop_name not in available_crops and crop_name not in fallback_crops:
+                if crop_name not in available_crops and crop_name not in fallback_crops and crop_name not in excluded_crops:
                     fallback_crops.append(crop_name)
         available_crops = list(available_crops) + sorted(fallback_crops)[:30]
         
