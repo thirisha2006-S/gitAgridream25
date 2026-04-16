@@ -4006,39 +4006,9 @@ elif menu == get_text("menu_disease", global_lang):
                                     raise Exception("API error")
                                     
                             except Exception as api_error:
-                                st.warning(f"API unavailable ({str(api_error)[:50]}), using sample data")
-                                
-                                # Fallback to sample data
-                            import random
-                            diseases = [
-                                {"name": "Early Blight", "probability": 0.92, "treatment": "Apply copper-based fungicide, remove infected leaves, avoid overhead watering"},
-                                {"name": "Late Blight", "probability": 0.88, "treatment": "Apply fungicide immediately, remove severely infected plants, improve air circulation"},
-                                {"name": "Powdery Mildew", "probability": 0.85, "treatment": "Apply neem oil or sulfur fungicide, improve ventilation, reduce humidity"},
-                            ]
-                            result = random.choice(diseases)
-                            
-                            st.markdown("---")
-                            st.markdown("### 📊 Sample Results")
-                            
-                            # === Enhanced Demo Results ===
-                            confidence_pct = int(result['probability'] * 100)
-                            
-                            # 1. Confidence with level
-                            if confidence_pct >= 80:
-                                conf_level = "HIGH"
-                                conf_color = "#28a745"
-                                conf_explanation = "Clear disease patterns detected in image with strong model certainty"
-                            elif confidence_pct >= 60:
-                                conf_level = "MEDIUM"
-                                conf_color = "#ffc107"
-                                conf_explanation = "Disease symptoms detected but image may be unclear - consider verification"
-                            else:
-                                conf_level = "LOW"
-                                conf_color = "#dc3545"
-                                conf_explanation = "Unclear image or mixed symptoms detected - expert consultation recommended"
-                            
-                            st.markdown(f"**🌱 Plant:** Tomato")
-                            st.markdown(f"**🦠 Disease Detected:** {result['name']}")
+                                st.warning("API temporarily unavailable. Please try again later.")
+                                st.info("💡 Tips: Use clear images with good lighting for best results.")
+                                st.caption("Powered by Plant.id API")
                             
                             st.markdown(f"""
                             <div style="background-color: #f8f9fa; padding: 15px; border-radius: 10px; margin: 10px 0;">
@@ -4307,15 +4277,12 @@ elif menu == get_text("menu_disease", global_lang):
                             st.markdown("""
                             <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #6c757d;">
                                 <p style="color: #6c757d; font-size: 12px; margin: 0;">
-                                    <strong>⚠️ Disclaimer:</strong> This is demo mode. Get a free API key for real detection.
+                                    <strong>ℹ️ Note:</strong> Results are based on Plant.id AI analysis.
                                 </p>
                             </div>
                             """, unsafe_allow_html=True)
                             
-                            st.warning("⚠️ Demo mode - Get a free API key for real detection:")
-                            st.info("1. Go to https://my.plantnet.org/signup")
-                            st.info("2. Create account → Go to Settings → API Key")
-                            st.info("3. Copy your API key and add to .env file as PLANTNET_API_KEY=your_key")
+                            st.info("💡 Tips for best results: Use clear images with good lighting, focus on affected area")
                         else:
                             # Real Pl@ntNet API call
                             st.info("🔄 Connecting to Pl@ntNet API...")
