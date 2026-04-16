@@ -4726,6 +4726,8 @@ elif menu == get_text("menu_emotion", global_lang):
     
     # ===== SIMPLE LAYOUT =====
     st.markdown("## 🌾 AgriCare AI - Your Farming Companion")
+    current_time = datetime.now().strftime("%d-%m-%Y %I:%M %p")
+    st.caption(f"🕐 {current_time}")
     
     # Quick Action Buttons
     st.markdown("### ⚡ Quick Actions")
