@@ -2034,6 +2034,47 @@ def get_dynamic_response(emotion, lang):
 # ---------------------------
 st.set_page_config(page_title="AgriDream 🌾", layout="wide", page_icon="🌱")
 
+# Custom CSS for better dark mode readability
+st.markdown("""
+<style>
+    /* Improve text readability in dark mode */
+    .stApp {
+        color: #FFFFFF;
+    }
+    /* Make headers more visible */
+    h1, h2, h3, h4, h5, h6 {
+        color: #FFFFFF !important;
+    }
+    /* Better contrast for regular text */
+    p, div, label {
+        color: #E0E0E0 !important;
+    }
+    /* Improve input fields visibility */
+    .stTextInput > div > div > input {
+        color: #FFFFFF;
+        background-color: #2D2D2D;
+    }
+    /* Better button visibility */
+    .stButton > button {
+        color: #FFFFFF;
+    }
+    /* Card-like containers */
+    .css-1r6slb0, .stMetric {
+        background-color: #3D3D3D;
+        padding: 15px;
+        border-radius: 10px;
+    }
+    /* Sidebar improvements */
+    .css-1d391kg {
+        background-color: #1E1E1E;
+    }
+    /* Chat bubbles - user (green) */
+    div[data-testid="stMarkdownContainer"] p {
+        color: #FFFFFF !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 # Global Language Selector
 global_lang = st.sidebar.selectbox("🌐 Select Language / भाषा चुनें / மொழியை தேர்ந்தெடுக்கவும்", languages, key="global_lang")
 
