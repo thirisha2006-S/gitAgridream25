@@ -2258,10 +2258,49 @@ if menu == get_text("menu_dashboard", global_lang):
     
     # Load price data
     try:
-        df_prices = pd.read_csv('agmarknet_prices.csv')
+        # Try multiple CSV files
+        try:
+            df_prices = pd.read_csv('agmarknet_prices.csv')
+        except:
+            try:
+                df_prices = pd.read_csv('Agriculture_price_dataset.csv')
+            except:
+                df_prices = pd.read_csv('merged_prices.csv')
+        
+        # Get unique commodities to validate crop selection
+        available_crops = df_prices['Commodity'].unique().tolist() if 'Commodity' in df_prices.columns else []
+        
+        # Map common crop names to actual commodity names in dataset
+        crop_name_mapping = {
+            'Rice': ['Paddy(Dhan)(Common)', 'Rice', 'Paddy'],
+            'Wheat': ['Wheat', 'Wheat(Atta)'],
+            'Cotton': ['Cotton', 'Cotton(Kapas)'],
+            'Tomato': ['Tomato'],
+            'Potato': ['Potato'],
+            'Onion': ['Onion'],
+            'Maize': ['Maize'],
+            'Sugarcane': ['Sugarcane']
+        }
+        
+        # Find matching commodity for selected crop
+        matched_commodity = None
+        for mapped_name, aliases in crop_name_mapping.items():
+            if dashboard_crop in aliases or dashboard_crop == mapped_name:
+                for alias in aliases:
+                    if alias in available_crops:
+                        matched_commodity = alias
+                        break
+                break
+        
+        # Use matched commodity or fallback to first available
+        search_crop = matched_commodity if matched_commodity else (available_crops[0] if available_crops else dashboard_crop)
         
         # Get analysis data - filter by state if available
-        state_prices = df_prices[df_prices['State'] == dashboard_state] if dashboard_state in df_prices['State'].values else df_prices
+        if 'State' in df_prices.columns:
+            state_prices = df_prices[df_prices['State'] == dashboard_state] if dashboard_state in df_prices['State'].values else df_prices
+        else:
+            state_prices = df_prices
+            
         trends = analyze_price_trends(state_prices if len(state_prices) > 0 else df_prices)
         
         # Get weather for selected state (state name will be mapped to capital city)
@@ -2278,11 +2317,18 @@ if menu == get_text("menu_dashboard", global_lang):
         # === 1. TOP STRIP - INSTANT SITUATION ===
         st.markdown("---")
         
-        # Get current price for user's crop
-        crop_price_data = state_prices[state_prices['Commodity'] == dashboard_crop] if len(state_prices) > 0 else df_prices[df_prices['Commodity'] == dashboard_crop]
-        current_price = int(crop_price_data['Modal_x0020_Price'].mean()) if not crop_price_data.empty else 2000
+        # Get current price for user's crop - with better error handling
+        if 'Commodity' in state_prices.columns and 'Modal_x0020_Price' in state_prices.columns:
+            crop_price_data = state_prices[state_prices['Commodity'] == search_crop] if len(state_prices) > 0 else df_prices[df_prices['Commodity'] == search_crop] if 'Commodity' in df_prices.columns else pd.DataFrame()
+            if not crop_price_data.empty:
+                current_price = int(crop_price_data['Modal_x0020_Price'].mean())
+            else:
+                current_price = 2500  # Default fallback price
+        else:
+            current_price = 2500  # Default if no commodity column
         
-        # Calculate trend for user's crop
+        # Calculate trend for user's crop using search_crop
+        crop_trend = trends.get(search_crop, "→ stable")
         crop_trend = trends.get(dashboard_crop, "→ stable")
         
         # Weather summary
