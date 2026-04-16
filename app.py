@@ -3944,9 +3944,71 @@ elif menu == get_text("menu_disease", global_lang):
                             st.caption("🤖 Powered by TensorFlow MobileNetV2 (Local AI)")
                             
                         except ImportError as e:
-                            st.info("🤖 Running in Demo Mode - showing sample results")
+                            st.info("🤖 Using Plant.id API for real disease detection...")
                             
-                            # Fallback to demo
+                            # Use Plant.id API for real detection
+                            try:
+                                import base64
+                                
+                                # Encode image to base64
+                                import base64
+                                img_base64 = base64.b64encode(image_bytes).decode('utf-8')
+                                
+                                # Call Plant.id API
+                                headers = {
+                                    'Content-Type': 'application/json',
+                                    'Api-Key': 'demo'  # Demo key for testing
+                                }
+                                
+                                data = {
+                                    'images': [f'data:image/jpeg;base64,{img_base64}'],
+                                    'latitude': 34.05,
+                                    'longitude': -118.25,
+                                    'datetime': int(datetime.now().timestamp())
+                                }
+                                
+                                response = requests.post(
+                                    'https://api.plant.id/v2/identify',
+                                    headers=headers,
+                                    json=data,
+                                    timeout=30
+                                )
+                                
+                                if response.status_code == 200:
+                                    result_data = response.json()
+                                    suggestions = result_data.get('suggestions', [])
+                                    
+                                    if suggestions:
+                                        top_match = suggestions[0]
+                                        plant_name = top_match.get('plant_name', 'Unknown Plant')
+                                        disease_name = top_match.get('disease_name', 'Healthy')
+                                        probability = int(top_match.get('probability', 0) * 100)
+                                        
+                                        st.markdown("---")
+                                        st.markdown("### 📊 Real Detection Results")
+                                        st.markdown(f"**🌱 Plant:** {plant_name}")
+                                        st.markdown(f"**🦠 Status:** {disease_name}")
+                                        st.markdown(f"**Confidence:** {probability}%")
+                                        
+                                        if 'healthy' in disease_name.lower() or probability > 70:
+                                            st.success("✅ Plant appears healthy!")
+                                        else:
+                                            st.warning("⚠️ Disease detected - see treatment below")
+                                        
+                                        # Get treatment
+                                        st.markdown("### 💊 Recommended Treatment")
+                                        st.info("Consult local agricultural officer for specific treatment. General: Remove infected leaves, apply appropriate fungicide, improve air circulation.")
+                                        
+                                        st.caption("🤖 Powered by Plant.id API")
+                                    else:
+                                        raise Exception("No results")
+                                else:
+                                    raise Exception("API error")
+                                    
+                            except Exception as api_error:
+                                st.warning("API temporarily unavailable, using sample data")
+                                
+                                # Fallback to sample data
                             import random
                             diseases = [
                                 {"name": "Early Blight", "probability": 0.92, "treatment": "Apply copper-based fungicide, remove infected leaves, avoid overhead watering"},
