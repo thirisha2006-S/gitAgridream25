@@ -6,15 +6,13 @@ from datetime import datetime
 import pytz
 
 def render_chat_header(farmer_name):
-    """Render chat header with farmer name and time"""
-    ist = pytz.timezone('Asia/Kolkata')
-    ist_time = datetime.now(ist).strftime("%d-%m-%Y %H:%M")
+    """Render chat header with farmer name"""
     st.markdown(f"""
     <div style="background: linear-gradient(135deg, #075E54, #128C7E); 
                 padding: 15px; border-radius: 10px; margin-bottom: 15px;">
         <h2 style="color: white; margin: 0;">🌾 AgriCare AI</h2>
         <p style="color: #D1D1D1; margin: 5px 0 0 0; font-size: 12px;">
-            🕐 India: {ist_time} | 👤 {farmer_name}
+            👤 {farmer_name}
         </p>
     </div>
     """, unsafe_allow_html=True)

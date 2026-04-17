@@ -4054,11 +4054,6 @@ elif menu == get_text("menu_emotion", global_lang):
     
     # ===== SIMPLE LAYOUT =====
     st.markdown("## 🌾 AgriCare AI - Your Farming Companion")
-    # Force Indian time
-    import pytz
-    ist_now = pytz.timezone('Asia/Kolkata').localize(datetime.now())
-    ist_time = ist_now.strftime("%d-%m-%Y %H:%M")
-    st.caption(f"🕐 India: {ist_time}")
     
     # Initialize chat history
     if "emotion_messages" not in st.session_state:
