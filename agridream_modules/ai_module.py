@@ -142,23 +142,33 @@ Water-Saving Techniques:
 
 💡 Tip: Irrigate at dawn for best results!"""
     
-    # Default farming response
+    # Default farming response - more variety
+    import time
+    current_time = int(time.time())
+    
     default_responses = [
-        "🌾 I'm here to help with farming! Ask me about crops, weather, prices, diseases, or soil care.",
-        "👨‍🌾 As your farming assistant, I can help with crop selection, weather updates, market prices, and more!",
-        "💚 Feel free to ask about any farming topic - I'm happy to help you grow better!"
+        "Hello! 👋 How can I help you with your farming today?",
+        "Hi there! 🌾 What would you like to know about your crops?",
+        "Hey! 💚 How can I assist you today?",
+        "Namaste! 🌾 What would you like to know about farming?",
+        "Hello, friend! 👨‍🌾 Ask me about crops, weather, prices, or any farming topic!",
+        "Hi! 🌟 I'm here to help with your farming needs. What would you like to know?",
+        "Welcome! 🌾 How can I help you grow better?",
+        "Hello! 🌱 What farming questions do you have today?"
     ]
-    return default_responses[msg_hash % len(default_responses)]
+    
+    # Use current time to vary the response
+    return default_responses[current_time % len(default_responses)]
 
 
 def detect_emotion(text):
     """Detect emotion from text input"""
     text_lower = text.lower()
     
-    # High risk keywords
+    # High risk keywords - more flexible matching
     high_risk_keywords = ['suicide', 'kill myself', 'end my life', 'want to die', 'no hope', 'better without me', 
                           'burden', 'worthless', 'depressed', 'hopeless', 'give up', 'ending everything',
-                          'death', 'die', 'suicidal', 'end it all']
+                          'death', 'die', 'suicidal', 'end it all', 'going to die', 'kill me', 'not worth']
     
     for keyword in high_risk_keywords:
         if keyword in text_lower:
@@ -166,14 +176,15 @@ def detect_emotion(text):
     
     # Sad keywords
     sad_keywords = ['sad', 'upset', 'worry', 'worried', 'stress', 'stressed', 'problem', 'trouble', 
-                   'loss', 'failed', 'bad', 'cry', 'crying', 'difficult', 'hard', 'alone']
+                   'loss', 'failed', 'bad', 'cry', 'crying', 'difficult', 'hard', 'alone', 'tired', 
+                   'depressed', 'feeling down', 'not good', 'worst']
     
     for keyword in sad_keywords:
         if keyword in text_lower:
             return "sad"
     
     # Angry keywords
-    angry_keywords = ['angry', 'frustrated', 'hate', 'annoyed', 'irritated', 'furious', 'unfair']
+    angry_keywords = ['angry', 'frustrated', 'hate', 'annoyed', 'irritated', 'furious', 'unfair', 'mad']
     
     for keyword in angry_keywords:
         if keyword in text_lower:
@@ -181,11 +192,14 @@ def detect_emotion(text):
     
     # Happy keywords
     happy_keywords = ['happy', 'good', 'great', 'excellent', 'wonderful', 'amazing', 'thank', 'thanks', 
-                     'joy', 'excited', 'love', 'best', 'wonderful', 'pleased', 'grateful']
+                     'joy', 'excited', 'love', 'best', 'wonderful', 'pleased', 'grateful', 'hi', 'hello', 
+                     'bye', 'goodbye', 'nice', 'cool']
     
     for keyword in happy_keywords:
         if keyword in text_lower:
             return "happy"
+    
+    return "happy"  # Default to happy for unrecognized
     
     return "happy"  # Default to happy
 
