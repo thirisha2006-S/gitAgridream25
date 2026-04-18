@@ -2096,6 +2096,7 @@ except Exception as e:
 
 # Get values from session state
 profile = st.session_state.get('farmer_profile', {})
+
 farmer_name = st.sidebar.text_input(get_text("farmer_name", global_lang), 
     value=profile.get('name', ''), key="farmer_name")
 farmer_age = st.sidebar.number_input(get_text("age", global_lang), 
@@ -2109,6 +2110,48 @@ family2_name = st.sidebar.text_input(get_text("family_member_2", global_lang),
     value=profile.get('family2', {}).get('name', ''), key="family2_name")
 family2_phone = st.sidebar.text_input(get_text("phone", global_lang), 
     value=profile.get('family2', {}).get('phone', ''), key="family2_phone")
+
+# Auto-save when any field changes
+def auto_save():
+    """Auto-save farmer profile to database when any field changes"""
+    # Get current values from session state
+    curr_name = st.session_state.get('farmer_name', '')
+    curr_age = st.session_state.get('farmer_age', 30)
+    curr_f1_name = st.session_state.get('family1_name', '')
+    curr_f1_phone = st.session_state.get('family1_phone', '')
+    curr_f2_name = st.session_state.get('family2_name', '')
+    curr_f2_phone = st.session_state.get('family2_phone', '')
+    
+    if curr_name:
+        try:
+            farmers = database.get_all_farmers()
+            existing = None
+            for f in farmers:
+                if f.get('name') == curr_name:
+                    existing = f
+                    break
+            
+            if existing:
+                database.update_farmer(existing['id'], 
+                    phone=curr_f1_phone if curr_f1_phone else existing.get('phone'),
+                    emergency_contact=curr_f1_phone if curr_f1_phone else existing.get('emergency_contact'),
+                    state="Maharashtra")
+            else:
+                database.insert_farmer(name=curr_name, state="Maharashtra", 
+                    phone=curr_f1_phone, emergency_contact=curr_f1_phone)
+            
+            # Update session state
+            st.session_state.farmer_profile = {
+                "name": curr_name, "age": curr_age,
+                "family1": {"name": curr_f1_name, "phone": curr_f1_phone},
+                "family2": {"name": curr_f2_name, "phone": curr_f2_phone}
+            }
+        except Exception as e:
+            print(f"Auto-save error: {e}")
+
+# Add auto-save callback to each widget
+if farmer_name and farmer_name != profile.get('name', ''):
+    auto_save()
 
 if st.sidebar.button(get_text("save_profile", global_lang)):
     # Save to database (permanent storage)
