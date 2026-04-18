@@ -53,6 +53,13 @@ def init_db():
 db_stats = init_db()
 print(f"Database initialized: {db_stats}")
 
+# Show database connection status in UI
+st.sidebar.markdown("---")
+if db_stats and db_stats.get('status') == 'success':
+    st.sidebar.success("✅ Database Connected")
+else:
+    st.sidebar.warning("⚠️ Database not connected")
+
 
 
 load_dotenv()

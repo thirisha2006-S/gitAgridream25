@@ -740,7 +740,7 @@ def get_database_stats() -> Dict:
     conn = get_connection()
     try:
         cursor = conn.cursor()
-        stats = {}
+        stats = {'status': 'success'}
         
         tables = ['farmers', 'crops', 'markets', 'prices', 'predictions', 'alerts']
         for table in tables:
@@ -748,6 +748,8 @@ def get_database_stats() -> Dict:
             stats[table] = cursor.fetchone()['count']
         
         return stats
+    except Exception as e:
+        return {'status': 'error', 'message': str(e)}
     finally:
         conn.close()
 
