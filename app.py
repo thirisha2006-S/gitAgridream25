@@ -41,7 +41,9 @@ import plotly.graph_objects as go
 
 # Flag for transformers (not required)
 TRANSFORMERS_AVAILABLE = False
-print("AgriDream starting...")
+
+# Check Cohere availability
+print(f"AgriDream starting... Cohere available: {COHERE_AVAILABLE}")
 
 # Initialize database on app start
 @st.cache_resource
