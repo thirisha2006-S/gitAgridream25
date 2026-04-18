@@ -55,9 +55,8 @@ def init_db():
         print(f"DB Init Error: {e}")
         return {'status': 'error', 'message': str(e)}
 
-# Run database initialization
-db_stats = init_db()
-print(f"Database initialized: {db_stats}")
+# Run database initialization silently
+init_db()
 
 
 
@@ -2058,12 +2057,6 @@ menu_options = [
     get_text("menu_emotion", global_lang),
     get_text("menu_schemes", global_lang)
 ]
-
-# Database connection status
-if db_stats and db_stats.get('status') == 'success':
-    st.sidebar.success("✅ Database Connected")
-else:
-    st.sidebar.error(f"⚠️ Database Error: {db_stats}")
 
 menu = st.sidebar.radio(
     get_text("select_language", global_lang),
