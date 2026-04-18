@@ -1821,31 +1821,9 @@ def get_deepai_response(user_message, emotion, lang, farmer_profile=None, conver
 
 # Function to get Cohere response
 def get_cohere_response(user_message, emotion, lang, farmer_profile=None, conversation_history=None):
-    """Generate response using Cohere API with improved chat method"""
+    """Generate response using Cohere API"""
     try:
         farmer_name = farmer_profile.get('name', 'friend') if farmer_profile else 'friend'
-
-        # Create comprehensive system prompt for AgriCare AI
-        system_prompt = f"""
-        You are AgriCare AI, a friendly and supportive assistant for farmers.
-        Your role is to answer farming questions in simple, practical language and also provide emotional support.
-        If the farmer sounds stressed, sad, or in a serious emotional state, first reply with empathy and comforting words.
-        Then, clearly suggest sending an emergency alert message to their family or agricultural officer via WhatsApp/SMS, such as:
-        "Farmer is feeling very stressed, please check on them immediately."
-        Do not actually send the message yourself, only suggest it when necessary.
-
-        When giving farming advice:
-        - Be specific and practical (fertilizers, irrigation methods, pest control, weather tips, crop care).
-        - Keep answers short, clear, and positive.
-        - Never give harmful or unsafe instructions.
-        Use a warm, motivating tone — like a trusted friend.
-        You may reply in English, or mix English with Tamil if that makes the farmer more comfortable.
-        Your main goal: Help farmers feel confident, supported, and safe.
-
-        Current farmer: {farmer_name}
-        Detected emotion: {emotion}
-        Language preference: {lang}
-        """
 
         # Initialize Cohere client
         co = cohere.Client(api_key=COHERE_API_KEY)
@@ -1853,24 +1831,22 @@ def get_cohere_response(user_message, emotion, lang, farmer_profile=None, conver
         # Debug: Log that we're calling API
         print(f"Calling Cohere API for: {user_message[:50]}...")
         
-        # Try with simpler API call first - using correct model name
+        # Try simple generate call
         try:
             response = co.generate(
-                prompt=system_prompt + f"\n\nFarmer says: {user_message}\n\nAgriCare AI responds:",
-                max_tokens=200,
-                temperature=0.8,
-                model="command-r-plus"
+                prompt=f"User: {user_message}\n\nYou are AgriCare AI, a helpful farming assistant. Respond to the user in a friendly way:",
+                max_tokens=150,
+                temperature=0.7
             )
             generated_text = response.generations[0].text.strip()
             print(f"Cohere success!")
         except Exception as e:
-            print(f"=== COHERE ERROR TYPE: {type(e).__name__} ===")
             print(f"=== COHERE ERROR: {str(e)} ===")
-            # Try fallback method - using simpler model
+            # Try chat method
             try:
                 response = co.chat(
                     message=user_message,
-                    preamble=system_prompt,
+                    preamble="You are AgriCare AI, a helpful farming assistant. Keep responses short and friendly.",
                     temperature=0.7,
                     max_tokens=150
                 )
