@@ -53,13 +53,6 @@ def init_db():
 db_stats = init_db()
 print(f"Database initialized: {db_stats}")
 
-# Show database connection status in UI
-st.sidebar.markdown("---")
-if db_stats and db_stats.get('status') == 'success':
-    st.sidebar.success("✅ Database Connected")
-else:
-    st.sidebar.warning("⚠️ Database not connected")
-
 
 
 load_dotenv()
@@ -2059,6 +2052,13 @@ menu_options = [
     get_text("menu_emotion", global_lang),
     get_text("menu_schemes", global_lang)
 ]
+
+# Database connection status
+if db_stats and db_stats.get('status') == 'success':
+    st.sidebar.success("✅ Database Connected")
+else:
+    st.sidebar.warning("⚠️ Database not connected")
+
 menu = st.sidebar.radio(
     get_text("select_language", global_lang),
     menu_options
