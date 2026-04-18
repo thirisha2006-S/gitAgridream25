@@ -201,8 +201,16 @@ def send_emergency_alert(farmer_name, phone, message):
         
         load_dotenv()
         
-        # Get RapidAPI credentials from environment
+        # Get RapidAPI credentials from environment or Streamlit secrets
         rapidapi_key = os.getenv('RAPIDAPI_KEY')
+        
+        # Try Streamlit secrets as fallback
+        try:
+            import streamlit as st
+            if 'RAPIDAPI_KEY' in st.secrets:
+                rapidapi_key = st.secrets['RAPIDAPI_KEY']
+        except:
+            pass
         
         if not rapidapi_key:
             print("RapidAPI key not configured")
@@ -238,7 +246,12 @@ def send_emergency_alert(farmer_name, phone, message):
         response = requests.post(url, json=payload, headers=headers, timeout=15)
         print(f"SMS alert response: {response.status_code} - {response.text}")
         
-        return response.status_code == 200 and 'return' in response.text and response.text.get('return', False)
+        # Check response properly
+        try:
+            resp_json = response.json()
+            return resp_json.get('return', False)
+        except:
+            return response.status_code == 200
         
     except Exception as e:
         print(f"SMS alert error: {e}")
