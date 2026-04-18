@@ -160,8 +160,11 @@ def get_family_numbers(farmer_profile):
 # Global variables for easy access
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 DEEP_AI_API_KEY = os.getenv('DEEP_AI_API_KEY')
-COHERE_API_KEY = '6rzDJkHIdCEw1aoURMqEqAk5kEZmTNDvXS7dQHbP'
+COHERE_API_KEY = os.getenv('COHERE_API_KEY', '6rzDJkHIdCEw1aoURMqEqAk5kEZmTNDvXS7dQHbP')
 FAMILY_NUMBERS = []  # Will be populated from farmer profile
+
+# Check if AI APIs are connected
+AI_CONNECTED = bool(COHERE_API_KEY)
 
 # ---------------------------
 # Load Crop Recommendation Data
@@ -2062,6 +2065,13 @@ menu = st.sidebar.radio(
     get_text("select_language", global_lang),
     menu_options
 )
+
+# Show API connection status in sidebar
+st.sidebar.markdown("---")
+if AI_CONNECTED:
+    st.sidebar.success("✅ AI Connected")
+else:
+    st.sidebar.warning("⚠️ AI Not Connected")
 
 
 # Enhanced Logo / Header Section
