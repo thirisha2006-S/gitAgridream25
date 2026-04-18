@@ -191,7 +191,9 @@ def detect_emotion(text):
 
 
 def send_emergency_alert(farmer_name, phone, message):
-    """Send emergency WhatsApp alert via CallMeBot"""
+    """Send emergency SMS alert via Fast2SMS (India) - Free SMS API
+    Get free API key: https://www.fast2sms.com/
+    """
     try:
         import requests
         import os
@@ -199,27 +201,35 @@ def send_emergency_alert(farmer_name, phone, message):
         
         load_dotenv()
         
-        # Get CallMeBot credentials from environment
-        callmebot_api_key = os.getenv('CALLMEBOT_API_KEY')
-        callmebot_phone = os.getenv('CALLMEBOT_PHONE')
+        # Get Fast2SMS credentials from environment
+        fast2sms_api_key = os.getenv('FAST2SMS_API_KEY')
         
-        if not callmebot_api_key or not callmebot_phone:
-            print("CallMeBot API not configured")
+        if not fast2sms_api_key:
+            print("Fast2SMS API not configured - Get free key at https://www.fast2sms.com/")
             return False
         
-        # Format phone number properly (add country code if needed)
-        phone = phone.strip().replace('+', '')
-        if not phone.startswith('91') and len(phone) == 10:
+        # Format phone number (India - 10 digits)
+        phone = phone.strip().replace('+', '').replace(' ', '')
+        if len(phone) == 10:
             phone = '91' + phone
+        elif len(phone) == 11 and phone.startswith('0'):
+            phone = '91' + phone[1:]
         
-        # Use CallMeBot API to send WhatsApp
-        encoded_message = requests.utils.quote(message)
-        url = f"https://api.callmebot.com/whatsapp.php?phone={callmebot_phone}&text={encoded_message}&apikey={callmebot_api_key}"
+        # Use Fast2SMS API
+        url = "https://www.fast2sms.com/dev/bulkV2"
         
-        response = requests.get(url, timeout=15)
-        print(f"WhatsApp alert response: {response.status_code}")
+        payload = f"sender_id=FSTSMS&message={message}&language=english&route=p&numbers={phone}"
         
-        return response.status_code == 200
+        headers = {
+            'authorization': fast2sms_api_key,
+            'Content-Type': 'application/x-www-form-urlencoded'
+        }
+        
+        response = requests.request("POST", url, data=payload, headers=headers, timeout=15)
+        print(f"SMS alert response: {response.status_code} - {response.text}")
+        
+        return response.status_code == 200 and 'Success' in response.text
+        
     except Exception as e:
-        print(f"WhatsApp alert error: {e}")
+        print(f"SMS alert error: {e}")
         return False
