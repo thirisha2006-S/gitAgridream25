@@ -4182,6 +4182,20 @@ elif menu == get_text("menu_emotion", global_lang):
                 except Exception as e:
                     print(f"Alert error: {e}")
         
+        # TEST BUTTON - Remove in production
+        st.sidebar.markdown("---")
+        if st.sidebar.button("🧪 Test SMS"):
+            test_phone = farmer_profile.get('family1', {}).get('phone', '')
+            if test_phone:
+                from agridream_modules.ai_module import send_emergency_alert
+                result = send_emergency_alert(farmer_name, test_phone, "Test message from AgriDream!")
+                if result:
+                    st.sidebar.success("✅ Test SMS sent!")
+                else:
+                    st.sidebar.error("❌ SMS failed - check API key")
+            else:
+                st.sidebar.warning("Add phone number in profile first")
+        
         # Save to database
         try:
             database.save_chat_message(
