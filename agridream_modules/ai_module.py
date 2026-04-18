@@ -194,10 +194,31 @@ def send_emergency_alert(farmer_name, phone, message):
     """Send emergency WhatsApp alert via CallMeBot"""
     try:
         import requests
-        CALLMEBOT_API_KEY = "your_api_key_here"
+        import os
+        from dotenv import load_dotenv
         
-        url = f"https://api.callmebot.com/whatsapp.php?phone={phone}&text={message}&apiKey={CALLMEBOT_API_KEY}"
-        response = requests.get(url, timeout=10)
+        load_dotenv()
+        
+        # Get CallMeBot credentials from environment
+        callmebot_api_key = os.getenv('CALLMEBOT_API_KEY')
+        callmebot_phone = os.getenv('CALLMEBOT_PHONE')
+        
+        if not callmebot_api_key or not callmebot_phone:
+            print("CallMeBot API not configured")
+            return False
+        
+        # Format phone number properly (add country code if needed)
+        phone = phone.strip().replace('+', '')
+        if not phone.startswith('91') and len(phone) == 10:
+            phone = '91' + phone
+        
+        # Use CallMeBot API to send WhatsApp
+        encoded_message = requests.utils.quote(message)
+        url = f"https://api.callmebot.com/whatsapp.php?phone={callmebot_phone}&text={encoded_message}&apikey={callmebot_api_key}"
+        
+        response = requests.get(url, timeout=15)
+        print(f"WhatsApp alert response: {response.status_code}")
+        
         return response.status_code == 200
     except Exception as e:
         print(f"WhatsApp alert error: {e}")

@@ -4168,13 +4168,19 @@ elif menu == get_text("menu_emotion", global_lang):
         
         # Auto-send emergency alert if high risk detected
         if detected_emotion == "high_risk":
-            family1_phone = st.session_state.get('family1_phone', '')
-            if family1_phone:
+            # Get emergency contact from farmer profile
+            emergency_phone = farmer_profile.get('family1', {}).get('phone', '')
+            if not emergency_phone:
+                emergency_phone = farmer_profile.get('emergency_contact', '')
+            
+            if emergency_phone:
                 try:
                     from agridream_modules.ai_module import send_emergency_alert
-                    send_emergency_alert(farmer_name, family1_phone, f"⚠️ Alert: {farmer_name} needs support. Please check on them.")
-                except:
-                    pass
+                    success = send_emergency_alert(farmer_name, emergency_phone, f"⚠️ Alert: {farmer_name} needs support. Please check on them.")
+                    if success:
+                        st.sidebar.success("🚨 Emergency alert sent!")
+                except Exception as e:
+                    print(f"Alert error: {e}")
         
         # Save to database
         try:
