@@ -1659,9 +1659,9 @@ def get_chatgpt_algorithm_fallback(emotion, lang, farmer_profile=None, user_mess
         f"You know, {farmer_name}, I'm really glad you reached out. What's been going on with you lately?"
     ])
 
-    # Return response based on conversation history length for variety
-    conversation_length = len(conversation_history) if conversation_history else 0
-    return responses[conversation_length % len(responses)]
+    # Return response using random for variety
+    import random
+    return random.choice(responses)
 
 # Enhanced fallback response function (legacy support)
 def get_enhanced_dynamic_response(emotion, lang, farmer_profile=None, user_message=None):
@@ -1696,9 +1696,9 @@ def get_enhanced_dynamic_response(emotion, lang, farmer_profile=None, user_messa
         f"I'm glad you reached out, {farmer_name}. How can I support you today?"
     ])
 
-    # Use conversation length for variety
-    conv_len = len(conversation_history) if conversation_history else 0
-    return responses[conv_len % len(responses)]
+    # Use random for variety
+    import random
+    return random.choice(responses)
 
 # Function to send emergency WhatsApp message using CallMeBot
 def send_emergency_whatsapp(farmer_profile, location, lang):
@@ -1839,9 +1839,10 @@ def get_cohere_response(user_message, emotion, lang, farmer_profile=None, conver
         # Debug: Log that we're calling API
         print(f"Calling Cohere API for: {user_message[:50]}...")
         
-        # Try simple generate call
+        # Try simple generate call (legacy - may fail)
         try:
             response = co.generate(
+                model="command-r-plus-08-2024",
                 prompt=f"User: {user_message}\n\nYou are AgriCare AI, a helpful farming assistant. Respond to the user in a friendly way:",
                 max_tokens=150,
                 temperature=0.7
@@ -1849,11 +1850,11 @@ def get_cohere_response(user_message, emotion, lang, farmer_profile=None, conver
             generated_text = response.generations[0].text.strip()
             print(f"Cohere success!")
         except Exception as e:
-            print(f"=== COHERE ERROR: {str(e)} ===")
-            print(f"Error type: {type(e).__name__}")
-            # Try chat method
+            print(f"=== COHERE GENERATE ERROR: {str(e)} ===")
+            # Try chat method instead
             try:
                 response = co.chat(
+                    model="command-r-plus-08-2024",
                     message=user_message,
                     preamble="You are AgriCare AI, a helpful farming assistant. Keep responses short and friendly.",
                     temperature=0.7,
@@ -1863,7 +1864,19 @@ def get_cohere_response(user_message, emotion, lang, farmer_profile=None, conver
                 print(f"Cohere chat success!")
             except Exception as e2:
                 print(f"=== COHERE CHAT ERROR: {str(e2)} ===")
-                return None
+                # Try default model
+                try:
+                    response = co.chat(
+                        message=user_message,
+                        preamble="You are AgriCare AI, a helpful farming assistant. Keep responses short and friendly.",
+                        temperature=0.7,
+                        max_tokens=150
+                    )
+                    generated_text = response.text.strip()
+                    print(f"Cohere default model success!")
+                except Exception as e3:
+                    print(f"=== COHERE DEFAULT ERROR: {str(e3)} ===")
+                    return None
 
         # Add empathetic elements based on emotion if not already included
         if emotion == "high_risk" and "emergency alert" not in generated_text.lower():

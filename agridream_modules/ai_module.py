@@ -4,6 +4,7 @@ AgriCare AI Module - Handles all AI/ML responses
 import cohere
 import random
 import hashlib
+import time
 
 # Cohere API Key
 COHERE_API_KEY = '6rzDJkHIdCEw1aoURMqEqAk5kEZmTNDvXS7dQHbP'
@@ -44,7 +45,7 @@ def get_cohere_response(user_message, emotion, lang, farmer_profile=None, conver
         chat_history.append({"role": "USER", "message": user_message})
         
         response = co.chat(
-            model="command-a-03-2025",
+            model="command-r-plus-08-2024",
             preamble=system_prompt,
             chat_history=chat_history,
             message=user_message,
@@ -89,7 +90,7 @@ def get_fallback_response(user_message, emotion):
             "📊 Current Rates: Tomato ₹18-25, Potato ₹15-20, Onion ₹20-30, Paddy ₹2100-2300, Wheat ₹2150-2400/q.",
             "💵 Today's Prices: Vegetable prices ₹15-30/kg, Grains ₹2100-2400/q. Mandi rates vary - check local market!"
         ]
-        return prices[msg_hash % len(prices)]
+        return random.choice(prices)
     
     # Weather responses
     elif query_type == 'weather':
@@ -98,7 +99,7 @@ def get_fallback_response(user_message, emotion):
             "🌧️ Monsoon Update: Light rain next 5 days, 25-32°C. Good for rice sowing. Avoid spraying before rain.",
             "🌦️ Forecast: Days 1-3 light rain, 4-7 clear. Great for planting rice & soybean!"
         ]
-        return weathers[msg_hash % len(weathers)]
+        return random.choice(weathers)
     
     # Crop responses
     elif query_type == 'crop':
@@ -107,7 +108,7 @@ def get_fallback_response(user_message, emotion):
             "🌱 Best Crops: 1)Paddy 2)Soybean 3)Cotton 4)Sugarcane 5)Vegetables. Use resistant varieties, rotate crops!",
             "🌿 This Season: Rice, Soybean, Cotton ideal now. Tips: organic compost, NPK based on soil test!"
         ]
-        return crops[msg_hash % len(crops)]
+        return random.choice(crops)
     
     # Disease responses
     elif query_type == 'disease':
@@ -115,7 +116,7 @@ def get_fallback_response(user_message, emotion):
             "🩺 Diseases: Vegetables-Blight use copper fungicide, Rice-Blight use resistant varieties. Prevention: disease-free seeds, crop rotation.",
             "🦠 Common Issues: Leaf spots-copper fungicide, Fruit rot-drainage+mulch. Prevention: spacing, remove debris. Use Disease Detection!"
         ]
-        return diseases[msg_hash % len(diseases)]
+        return random.choice(diseases)
     
     # Soil responses
     elif query_type == 'soil':
@@ -142,10 +143,7 @@ Water-Saving Techniques:
 
 💡 Tip: Irrigate at dawn for best results!"""
     
-    # Default farming response - more variety
-    import time
-    current_time = int(time.time())
-    
+    # Default farming response - use random for variety
     default_responses = [
         "Hello! 👋 How can I help you with your farming today?",
         "Hi there! 🌾 What would you like to know about your crops?",
@@ -157,8 +155,8 @@ Water-Saving Techniques:
         "Hello! 🌱 What farming questions do you have today?"
     ]
     
-    # Use current time to vary the response
-    return default_responses[current_time % len(default_responses)]
+    # Use random to vary the response
+    return random.choice(default_responses)
 
 
 def detect_emotion(text):
