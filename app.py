@@ -47,7 +47,13 @@ print("AgriDream starting...")
 @st.cache_resource
 def init_db():
     """Initialize database once"""
-    return database.initialize_database()
+    try:
+        result = database.initialize_database()
+        print(f"DB Init Result: {result}")
+        return result
+    except Exception as e:
+        print(f"DB Init Error: {e}")
+        return {'status': 'error', 'message': str(e)}
 
 # Run database initialization
 db_stats = init_db()
@@ -2056,8 +2062,11 @@ menu_options = [
 # Database connection status
 if db_stats and db_stats.get('status') == 'success':
     st.sidebar.success("✅ Database Connected")
+    # Show stats
+    with st.sidebar.expander("📊 DB Stats"):
+        st.write(db_stats)
 else:
-    st.sidebar.warning("⚠️ Database not connected")
+    st.sidebar.error(f"⚠️ Database Error: {db_stats}")
 
 menu = st.sidebar.radio(
     get_text("select_language", global_lang),
