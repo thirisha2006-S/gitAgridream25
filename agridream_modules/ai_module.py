@@ -155,7 +155,8 @@ Water-Saving Techniques:
         "Hello! 🌱 What farming questions do you have today?"
     ]
     
-    # Use random to vary the response
+    # Use random to vary the response - add debug
+    print(f"DEBUG: Returning random fallback. msg_hash={msg_hash}")
     return random.choice(default_responses)
 
 
