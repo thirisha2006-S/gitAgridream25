@@ -1852,30 +1852,27 @@ def get_cohere_response(user_message, emotion, lang, farmer_profile=None, conver
         
         # Debug: Log that we're calling API
         print(f"Calling Cohere API for: {user_message[:50]}...")
-        print(f"API Key first 10 chars: {COHERE_API_KEY[:10]}...")
         
-        # Try with simpler API call first
+        # Try with simpler API call first - using correct model name
         try:
             response = co.generate(
                 prompt=system_prompt + f"\n\nFarmer says: {user_message}\n\nAgriCare AI responds:",
                 max_tokens=200,
                 temperature=0.8,
-                model="command-r-plus-08-2024"
+                model="command-r-plus"
             )
             generated_text = response.generations[0].text.strip()
             print(f"Cohere success!")
         except Exception as e:
             print(f"=== COHERE ERROR TYPE: {type(e).__name__} ===")
             print(f"=== COHERE ERROR: {str(e)} ===")
-            # Try fallback method
+            # Try fallback method - using simpler model
             try:
-                # Use chat method as backup
                 response = co.chat(
-                    model="command-r-plus",
                     message=user_message,
                     preamble=system_prompt,
-                    temperature=0.8,
-                    max_tokens=200
+                    temperature=0.7,
+                    max_tokens=150
                 )
                 generated_text = response.text.strip()
                 print(f"Cohere chat success!")
