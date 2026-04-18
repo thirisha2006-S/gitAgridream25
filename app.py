@@ -1852,39 +1852,34 @@ def get_cohere_response(user_message, emotion, lang, farmer_profile=None, conver
         
         # Debug: Log that we're calling API
         print(f"Calling Cohere API for: {user_message[:50]}...")
-
-        # Prepare conversation context for chat method
-        chat_history = []
-        if conversation_history:
-            recent_chats = conversation_history[-3:]  # Last 3 exchanges for better context
-            for chat in recent_chats:
-                if chat.get('user') and chat.get('bot'):
-                    chat_history.append({
-                        "role": "USER",
-                        "message": chat['user']
-                    })
-                    chat_history.append({
-                        "role": "CHATBOT",
-                        "message": chat['bot']
-                    })
-
-        # Add current user message
-        chat_history.append({
-            "role": "USER",
-            "message": user_message
-        })
-
-        # Use the newer chat method for better reliability
-        response = co.chat(
-            model="command-r-plus",
-            preamble=system_prompt,
-            chat_history=chat_history,
-            message=user_message,
-            temperature=0.8,
-            max_tokens=200
-        )
-
-        generated_text = response.text.strip()
+        
+        # Try with simpler API call first
+        try:
+            response = co.generate(
+                prompt=system_prompt + f"\n\nFarmer says: {user_message}\n\nAgriCare AI responds:",
+                max_tokens=200,
+                temperature=0.8,
+                model="command-r-plus-08-2024"
+            )
+            generated_text = response.generations[0].text.strip()
+            print(f"Cohere success!")
+        except Exception as e:
+            print(f"Cohere generate error: {e}")
+            # Try fallback method
+            try:
+                # Use chat method as backup
+                response = co.chat(
+                    model="command-r-plus",
+                    message=user_message,
+                    preamble=system_prompt,
+                    temperature=0.8,
+                    max_tokens=200
+                )
+                generated_text = response.text.strip()
+                print(f"Cohere chat success!")
+            except Exception as e2:
+                print(f"Cohere chat error: {e2}")
+                return None
 
         # Add empathetic elements based on emotion if not already included
         if emotion == "high_risk" and "emergency alert" not in generated_text.lower():
