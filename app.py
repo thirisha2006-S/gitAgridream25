@@ -1829,51 +1829,38 @@ def get_cohere_response(user_message, emotion, lang, farmer_profile=None, conver
     try:
         farmer_name = farmer_profile.get('name', 'friend') if farmer_profile else 'friend'
 
-        print(f"=== COHERE API TEST ===")
-        print(f"API Key exists: {bool(COHERE_API_KEY)}")
-        print(f"API Key length: {len(COHERE_API_KEY) if COHERE_API_KEY else 0}")
+        print(f"=== COHERE API CALL ===")
+        print(f"API Key: {'*' * 20}{COHERE_API_KEY[-5:]}")
         
         # Initialize Cohere client
         co = cohere.Client(api_key=COHERE_API_KEY)
         
-        # Debug: Log that we're calling API
-        print(f"Calling Cohere API for: {user_message[:50]}...")
+        # Use simple chat - this always works
+        print(f"Sending to Cohere: {user_message[:30]}...")
         
-        # Try simple generate call (legacy - may fail)
-        try:
-            response = co.generate(
-                model="command-r-plus-08-2024",
-                prompt=f"User: {user_message}\n\nYou are AgriCare AI, a helpful farming assistant. Respond to the user in a friendly way:",
-                max_tokens=150,
-                temperature=0.7
-            )
-            generated_text = response.generations[0].text.strip()
-            print(f"Cohere success!")
-        except Exception as e:
-            print(f"=== COHERE GENERATE ERROR: {str(e)} ===")
-            # Try chat method instead
-            try:
-                response = co.chat(
-                    model="command-r-plus-08-2024",
-                    message=user_message,
-                    preamble="You are AgriCare AI, a helpful farming assistant. Keep responses short and friendly.",
-                    temperature=0.7,
-                    max_tokens=150
-                )
-                generated_text = response.text.strip()
-                print(f"Cohere chat success!")
-            except Exception as e2:
-                print(f"=== COHERE CHAT ERROR: {str(e2)} ===")
-                # Try default model
-                try:
-                    response = co.chat(
-                        message=user_message,
-                        preamble="You are AgriCare AI, a helpful farming assistant. Keep responses short and friendly.",
-                        temperature=0.7,
-                        max_tokens=150
-                    )
-                    generated_text = response.text.strip()
-                    print(f"Cohere default model success!")
+        response = co.chat(
+            message=user_message,
+            preamble="You are AgriCare AI, a friendly farming assistant. Keep responses short, helpful, and conversational.",
+            temperature=0.7,
+            max_tokens=200
+        )
+        
+        generated_text = response.text.strip()
+        print(f"Cohere success! Response: {generated_text[:50]}...")
+        
+        # Add empathetic elements based on emotion
+        if emotion == "high_risk" and "help" not in generated_text.lower():
+            generated_text += " Please reach out to someone you trust."
+        elif emotion == "sad" and "here" not in generated_text.lower():
+            generated_text += " I'm here for you."
+        elif emotion == "happy" and "great" not in generated_text.lower():
+            generated_text += " That's wonderful!"
+        
+        return generated_text
+
+    except Exception as e:
+        print(f"=== COHERE ERROR: {str(e)} ===")
+        return None
                 except Exception as e3:
                     print(f"=== COHERE DEFAULT ERROR: {str(e3)} ===")
                     return None
