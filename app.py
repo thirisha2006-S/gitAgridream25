@@ -4150,11 +4150,16 @@ elif menu == get_text("menu_emotion", global_lang):
         # Get response from AI (with better error handling)
         try:
             response = get_cohere_response(user_input, detected_emotion, global_lang, farmer_profile, messages)
+            # If response is None or empty, use fallback
+            if not response or response.strip() == "":
+                raise Exception("Empty response from Cohere")
         except Exception as e:
             print(f"AI Error: {e}")
             try:
                 from agridream_modules.ai_module import get_fallback_response
                 response = get_fallback_response(user_input, detected_emotion)
+                if not response:
+                    response = get_chatgpt_style_fallback(detected_emotion, global_lang, farmer_profile, user_input, messages)
             except:
                 response = get_chatgpt_style_fallback(detected_emotion, global_lang, farmer_profile, user_input, messages)
         
