@@ -1825,6 +1825,10 @@ def get_cohere_response(user_message, emotion, lang, farmer_profile=None, conver
     try:
         farmer_name = farmer_profile.get('name', 'friend') if farmer_profile else 'friend'
 
+        print(f"=== COHERE API TEST ===")
+        print(f"API Key exists: {bool(COHERE_API_KEY)}")
+        print(f"API Key length: {len(COHERE_API_KEY) if COHERE_API_KEY else 0}")
+        
         # Initialize Cohere client
         co = cohere.Client(api_key=COHERE_API_KEY)
         
@@ -1842,6 +1846,7 @@ def get_cohere_response(user_message, emotion, lang, farmer_profile=None, conver
             print(f"Cohere success!")
         except Exception as e:
             print(f"=== COHERE ERROR: {str(e)} ===")
+            print(f"Error type: {type(e).__name__}")
             # Try chat method
             try:
                 response = co.chat(
