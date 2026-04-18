@@ -1847,6 +1847,9 @@ def get_cohere_response(user_message, emotion, lang, farmer_profile=None, conver
 
         # Initialize Cohere client
         co = cohere.Client(api_key=COHERE_API_KEY)
+        
+        # Debug: Log that we're calling API
+        print(f"Calling Cohere API for: {user_message[:50]}...")
 
         # Prepare conversation context for chat method
         chat_history = []
@@ -1871,13 +1874,12 @@ def get_cohere_response(user_message, emotion, lang, farmer_profile=None, conver
 
         # Use the newer chat method for better reliability
         response = co.chat(
-            model="command-a-03-2025",
+            model="command-r-plus",
             preamble=system_prompt,
             chat_history=chat_history,
             message=user_message,
             temperature=0.8,
-            max_tokens=150,
-            connectors=[]  # No external tools needed
+            max_tokens=200
         )
 
         generated_text = response.text.strip()
