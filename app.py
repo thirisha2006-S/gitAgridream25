@@ -1473,6 +1473,8 @@ def get_chatgpt_style_fallback(emotion, lang, farmer_profile=None, user_message=
             query_type = qtype
             break
     
+    import random
+
     # If it's a farming query, provide farming-specific response
     if query_type == 'price':
         prices = [
@@ -1480,7 +1482,7 @@ def get_chatgpt_style_fallback(emotion, lang, farmer_profile=None, user_message=
             """📊 Current Rates: 🥬 Tomato ₹18-25, 🥔 Potato ₹15-20, 🧅 Onion ₹20-30, 🌾 Paddy ₹2100-2300, 🌾 Wheat ₹2150-2400, 🌿 Cotton ₹6500-7000/q.""",
             """💵 Today's Prices: Vegetable prices ₹15-30/kg, Grains ₹2100-2400/q. Mandi rates vary - check local market for best returns!"""
         ]
-        return prices[msg_hash % len(prices)]
+        return random.choice(prices)
     
     elif query_type == 'weather':
         weathers = [
@@ -1488,7 +1490,7 @@ def get_chatgpt_style_fallback(emotion, lang, farmer_profile=None, user_message=
             """🌧️ Monsoon Update: Light rain next 5 days, 25-32°C. Good for Kharif sowing, ideal for rice. Avoid spraying before rain. Best crops now: Rice, Soybean.""",
             """🌦️ Forecast: Days 1-3 light rain, 4-7 clear. Great for planting rice & soybean. Monitor humidity for pests. Good growing conditions!"""
         ]
-        return weathers[msg_hash % len(weathers)]
+        return random.choice(weathers)
     
     elif query_type == 'crop':
         crops = [
@@ -1496,14 +1498,14 @@ def get_chatgpt_style_fallback(emotion, lang, farmer_profile=None, user_message=
             """🌱 Best Crops: 1)Paddy-lowland 2)Soybean-protein 3)Cotton-black soil 4)Sugarcane-year round 5)Vegetables-60-90 days. Use resistant varieties, rotate crops!""",
             """🌿 This Season: Rice, Soybean, Cotton ideal now. Tips: organic compost, NPK based on soil test, adequate irrigation. Visit Crop Recommendation for personalized help!"""
         ]
-        return crops[msg_hash % len(crops)]
+        return random.choice(crops)
     
     elif query_type == 'disease':
         diseases = [
             """🩺 Diseases: Vegetables-Blight use copper fungicide, Rice-Blight use resistant varieties. Prevention: disease seeds, crop rotation, proper spacing.""",
             """🦠 Common Issues: Leaf spots-copper fungicide, Fruit rot-drainage+mulch, Stem rot-neem oil. Prevention: spacing, remove debris, certified seeds. Use Disease Detection!"""
         ]
-        return diseases[msg_hash % len(diseases)]
+        return random.choice(diseases)
     
     elif query_type == 'soil':
         return f"""🧪 **Soil Health Tips**
@@ -1580,13 +1582,15 @@ def get_chatgpt_style_fallback(emotion, lang, farmer_profile=None, user_message=
             ]
         }
 
+        import random
+
         responses = chatgpt_responses.get(emotion, [
             f"I hear you, {farmer_name}. You know, sometimes just talking about things can help. What's been on your mind lately?",
             f"That's interesting, {farmer_name}. Tell me more about that. I'm genuinely curious to hear your thoughts.",
             f"I appreciate you sharing that with me, {farmer_name}. How are you feeling about everything right now?"
         ])
 
-        return responses[msg_hash % len(responses)]
+        return random.choice(responses)
     
     # Default farming response for unrecognized queries
     return f"""I'm here to help you with your farming questions! 🌾
