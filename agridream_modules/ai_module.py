@@ -191,8 +191,8 @@ def detect_emotion(text):
 
 
 def send_emergency_alert(farmer_name, phone, message):
-    """Send emergency SMS alert via Fast2SMS (India) - Free SMS API
-    Get free API key: https://www.fast2sms.com/
+    """Send emergency SMS alert via RapidAPI SMS service
+    RapidAPI Key: User provided
     """
     try:
         import requests
@@ -201,11 +201,15 @@ def send_emergency_alert(farmer_name, phone, message):
         
         load_dotenv()
         
-        # Get Fast2SMS credentials from environment
-        fast2sms_api_key = os.getenv('FAST2SMS_API_KEY')
+        # Get RapidAPI credentials from environment
+        rapidapi_key = os.getenv('RAPIDAPI_KEY')
         
-        if not fast2sms_api_key:
-            print("Fast2SMS API not configured - Get free key at https://www.fast2sms.com/")
+        if not rapidapi_key:
+            print("RapidAPI key not configured")
+            # Fallback to Fast2SMS
+            fast2sms_api_key = os.getenv('FAST2SMS_API_KEY')
+            if fast2sms_api_key:
+                return send_via_fast2sms(fast2sms_api_key, phone, message)
             return False
         
         # Format phone number (India - 10 digits)
@@ -215,21 +219,43 @@ def send_emergency_alert(farmer_name, phone, message):
         elif len(phone) == 11 and phone.startswith('0'):
             phone = '91' + phone[1:]
         
-        # Use Fast2SMS API
-        url = "https://www.fast2sms.com/dev/bulkV2"
-        
-        payload = f"sender_id=FSTSMS&message={message}&language=english&route=p&numbers={phone}"
-        
-        headers = {
-            'authorization': fast2sms_api_key,
-            'Content-Type': 'application/x-www-form-urlencoded'
+        # Use RapidAPI - fast2sms service
+        url = "https://fast2sms.p.rapidapi.com/send"
+
+        payload = {
+            "message": message,
+            "language": "english",
+            "route": "p",
+            "numbers": phone
         }
-        
-        response = requests.request("POST", url, data=payload, headers=headers, timeout=15)
+
+        headers = {
+            "content-type": "application/json",
+            "X-RapidAPI-Key": rapidapi_key,
+            "X-RapidAPI-Host": "fast2sms.p.rapidapi.com"
+        }
+
+        response = requests.post(url, json=payload, headers=headers, timeout=15)
         print(f"SMS alert response: {response.status_code} - {response.text}")
         
-        return response.status_code == 200 and 'Success' in response.text
+        return response.status_code == 200 and 'return' in response.text and response.text.get('return', False)
         
     except Exception as e:
         print(f"SMS alert error: {e}")
+        return False
+
+
+def send_via_fast2sms(api_key, phone, message):
+    """Fallback: Send via Fast2SMS direct API"""
+    try:
+        import requests
+        
+        url = "https://www.fast2sms.com/dev/bulkV2"
+        payload = f"sender_id=FSTSMS&message={message}&language=english&route=p&numbers={phone}"
+        headers = {'authorization': api_key, 'Content-Type': 'application/x-www-form-urlencoded'}
+        
+        response = requests.post(url, data=payload, headers=headers, timeout=15)
+        return response.status_code == 200 and 'Success' in response.text
+    except Exception as e:
+        print(f"Fast2SMS error: {e}")
         return False
