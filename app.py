@@ -2062,9 +2062,6 @@ menu_options = [
 # Database connection status
 if db_stats and db_stats.get('status') == 'success':
     st.sidebar.success("✅ Database Connected")
-    # Show stats
-    with st.sidebar.expander("📊 DB Stats"):
-        st.write(db_stats)
 else:
     st.sidebar.error(f"⚠️ Database Error: {db_stats}")
 
