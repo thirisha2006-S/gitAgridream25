@@ -83,14 +83,17 @@ def get_fallback_response(user_message, emotion):
             query_type = qtype
             break
     
-    # Price responses
+    # Price responses - use time-based
+    import time
+    current_time_ms = int(time.time() * 1000)
+    
     if query_type == 'price':
         prices = [
             "💰 Market Prices: Tomato ₹18-25/kg, Potato ₹15-20/kg, Onion ₹20-30/kg, Rice ₹2100-2300/q, Wheat ₹2150-2400/q. Check Price page for more!",
             "📊 Current Rates: Tomato ₹18-25, Potato ₹15-20, Onion ₹20-30, Paddy ₹2100-2300, Wheat ₹2150-2400/q.",
             "💵 Today's Prices: Vegetable prices ₹15-30/kg, Grains ₹2100-2400/q. Mandi rates vary - check local market!"
         ]
-        return random.choice(prices)
+        return prices[current_time_ms % len(prices)]
     
     # Weather responses
     elif query_type == 'weather':
@@ -99,7 +102,7 @@ def get_fallback_response(user_message, emotion):
             "🌧️ Monsoon Update: Light rain next 5 days, 25-32°C. Good for rice sowing. Avoid spraying before rain.",
             "🌦️ Forecast: Days 1-3 light rain, 4-7 clear. Great for planting rice & soybean!"
         ]
-        return random.choice(weathers)
+        return weathers[current_time_ms % len(weathers)]
     
     # Crop responses
     elif query_type == 'crop':
@@ -108,7 +111,7 @@ def get_fallback_response(user_message, emotion):
             "🌱 Best Crops: 1)Paddy 2)Soybean 3)Cotton 4)Sugarcane 5)Vegetables. Use resistant varieties, rotate crops!",
             "🌿 This Season: Rice, Soybean, Cotton ideal now. Tips: organic compost, NPK based on soil test!"
         ]
-        return random.choice(crops)
+        return crops[current_time_ms % len(crops)]
     
     # Disease responses
     elif query_type == 'disease':
@@ -116,7 +119,7 @@ def get_fallback_response(user_message, emotion):
             "🩺 Diseases: Vegetables-Blight use copper fungicide, Rice-Blight use resistant varieties. Prevention: disease-free seeds, crop rotation.",
             "🦠 Common Issues: Leaf spots-copper fungicide, Fruit rot-drainage+mulch. Prevention: spacing, remove debris. Use Disease Detection!"
         ]
-        return random.choice(diseases)
+        return diseases[current_time_ms % len(diseases)]
     
     # Soil responses
     elif query_type == 'soil':
@@ -143,7 +146,10 @@ Water-Saving Techniques:
 
 💡 Tip: Irrigate at dawn for best results!"""
     
-    # Default farming response - use random for variety
+    # Default farming response - use time-based for variety
+    import time
+    current_time_ms = int(time.time() * 1000)
+    
     default_responses = [
         "Hello! 👋 How can I help you with your farming today?",
         "Hi there! 🌾 What would you like to know about your crops?",
@@ -152,12 +158,14 @@ Water-Saving Techniques:
         "Hello, friend! 👨‍🌾 Ask me about crops, weather, prices, or any farming topic!",
         "Hi! 🌟 I'm here to help with your farming needs. What would you like to know?",
         "Welcome! 🌾 How can I help you grow better?",
-        "Hello! 🌱 What farming questions do you have today?"
+        "Hello! 🌱 What farming questions do you have today?",
+        "Greetings, farmer! 🌻 How can I help you today?",
+        "Namaste, friend! 🚜 What would you like to ask about?"
     ]
     
-    # Use random to vary the response - add debug
-    print(f"DEBUG: Returning random fallback. msg_hash={msg_hash}")
-    return random.choice(default_responses)
+    # Use time-based selection for guaranteed variety
+    print(f"DEBUG: Returning fallback. time_ms={current_time_ms}")
+    return default_responses[current_time_ms % len(default_responses)]
 
 
 def detect_emotion(text):
