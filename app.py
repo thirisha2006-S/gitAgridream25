@@ -1852,6 +1852,7 @@ def get_cohere_response(user_message, emotion, lang, farmer_profile=None, conver
         
         # Debug: Log that we're calling API
         print(f"Calling Cohere API for: {user_message[:50]}...")
+        print(f"API Key first 10 chars: {COHERE_API_KEY[:10]}...")
         
         # Try with simpler API call first
         try:
@@ -1864,7 +1865,8 @@ def get_cohere_response(user_message, emotion, lang, farmer_profile=None, conver
             generated_text = response.generations[0].text.strip()
             print(f"Cohere success!")
         except Exception as e:
-            print(f"Cohere generate error: {e}")
+            print(f"=== COHERE ERROR TYPE: {type(e).__name__} ===")
+            print(f"=== COHERE ERROR: {str(e)} ===")
             # Try fallback method
             try:
                 # Use chat method as backup
@@ -1878,7 +1880,7 @@ def get_cohere_response(user_message, emotion, lang, farmer_profile=None, conver
                 generated_text = response.text.strip()
                 print(f"Cohere chat success!")
             except Exception as e2:
-                print(f"Cohere chat error: {e2}")
+                print(f"=== COHERE CHAT ERROR: {str(e2)} ===")
                 return None
 
         # Add empathetic elements based on emotion if not already included
