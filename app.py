@@ -1861,23 +1861,6 @@ def get_cohere_response(user_message, emotion, lang, farmer_profile=None, conver
     except Exception as e:
         print(f"=== COHERE ERROR: {str(e)} ===")
         return None
-                except Exception as e3:
-                    print(f"=== COHERE DEFAULT ERROR: {str(e3)} ===")
-                    return None
-
-        # Add empathetic elements based on emotion if not already included
-        if emotion == "high_risk" and "emergency alert" not in generated_text.lower():
-            generated_text += "\n\nPlease know that help is available - you can talk to someone you trust or call a helpline."
-        elif emotion == "sad" and "here for you" not in generated_text.lower():
-            generated_text += "\n\nI'm here for you whenever you need to talk."
-        elif emotion == "happy" and "wonderful" not in generated_text.lower():
-            generated_text += "\n\nIt's wonderful to see you feeling positive!"
-
-        return generated_text
-
-    except Exception as e:
-        print(f"Cohere Error: {e}")
-        return None
 
 # Function to get DeepAI response
 def get_deepai_response(user_message, emotion, lang, farmer_profile=None, conversation_history=None):
