@@ -1903,7 +1903,7 @@ def get_deepai_response(user_message, emotion, lang, farmer_profile=None, conver
 
 # Function to get Cohere response
 def get_cohere_response(user_message, emotion, lang, farmer_profile=None, conversation_history=None):
-    """Generate response using Cohere API - with context awareness"""
+    """Generate response using Cohere API - with structured prompt system"""
     import traceback
     
     print(">>> get_cohere_response STARTED")
@@ -1915,33 +1915,51 @@ def get_cohere_response(user_message, emotion, lang, farmer_profile=None, conver
         farmer_name = farmer_profile.get('name', 'friend') if farmer_profile else 'friend'
         
         print(f"=== COHERE API CALL ===")
-        print(f"API Key: {'*' * 20}{COHERE_API_KEY[-5:]}")
-        print(f"User message: {user_message}")
         
         # Initialize Cohere client with timeout
         co = cohere.Client(api_key=COHERE_API_KEY, timeout=60)
         
         print(">>> Cohere client created, making API call...")
         
-        # Build comprehensive preamble with farming context
-        preamble = f"""You are AgriCare AI, a friendly and helpful farming assistant for farmers. 
-Your role is to:
-1. Help farmers with agricultural questions (crops, weather, prices, soil, irrigation, diseases)
-2. Have natural conversations - greet back when someone says hi, answer questions directly
-3. Be supportive and empathetic when farmers share their feelings
-4. Keep responses conversational, short, and helpful
+        # STRUCTURED SYSTEM PROMPT - This controls personality
+        SYSTEM_PROMPT = """You are AgriCare AI, a friendly farming assistant.
 
-You know about:
-- Weather forecasts and monsoon updates
-- Market prices for crops (tomato, potato, onion, paddy, wheat, cotton)
-- Crop recommendations for different seasons (Kharif, Rabi)
-- Plant diseases and simple remedies
-- Soil health and fertilizer tips
-- Irrigation methods and water-saving techniques
+PERSONALITY:
+- Warm, simple, and human-like - never robotic
+- Never say "as an AI" or "I don't have feelings"
+- Keep responses short and practical
+- Be conversational, like a helpful friend
 
-Always respond directly to what the user says. If they greet you, greet them back. If they ask about farming, give helpful advice. If they seem sad or upset, be empathetic and supportive."""
+EMOTION HANDLING:
+- If user seems happy: Be cheerful and positive
+- If user seems sad: Be warm and supportive, not overly dramatic
+- If user seems frustrated: Be understanding and calm
+- If user is in crisis (talking about giving up/harm): Be serious about getting help
+
+FARMING EXPERTISE:
+- Help with crops, weather, prices, soil, irrigation, diseases
+- Give practical advice when asked
+- If user asks about non-farming topics: Handle it naturally
+
+RULES:
+- Always respond directly to what user says
+- Don't give disclaimers - just be helpful
+- If you don't know something: Admit it simply, don't lecture"""
         
-        # Prepare chat history for context (convert to Cohere format)
+        # Build preamble with emotion context
+        emotion_context = ""
+        if emotion == "sad":
+            emotion_context = "\n[User seems a bit down - be warm and supportive]"
+        elif emotion == "happy":
+            emotion_context = "\n[User seems happy - be cheerful]"
+        elif emotion == "angry":
+            emotion_context = "\n[User seems frustrated - be understanding]"
+        elif emotion == "high_risk":
+            emotion_context = "\n[User may be in crisis - be serious about getting them help]"
+        
+        full_preamble = SYSTEM_PROMPT + emotion_context
+        
+        # Build chat history
         chat_history = []
         if conversation_history:
             recent_chats = conversation_history[-3:] if len(conversation_history) > 3 else conversation_history
@@ -1956,7 +1974,7 @@ Always respond directly to what the user says. If they greet you, greet them bac
         response = co.chat(
             model="command-r-08-2024",
             message=user_message,
-            preamble=preamble,
+            preamble=full_preamble,
             chat_history=chat_history if chat_history else None,
             temperature=0.7,
             max_tokens=200
@@ -4262,8 +4280,8 @@ elif menu == get_text("menu_emotion", global_lang):
         except Exception as e:
             print(f">>> Error: {e}")
             print(">>> Using fallback...")
-            # Fallback only for API failures
-            response = f"I hear you. Tell me more about what's on your mind."
+            # Fallback ONLY for API failures - simple message
+            response = "I'm here to help! Try asking me about farming, weather, or just chat."
             
             st.session_state.emotion_messages.append({
                 "user": user_input,
