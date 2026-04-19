@@ -1912,8 +1912,8 @@ def get_cohere_response(user_message, emotion, lang, farmer_profile=None, conver
         print(f"API Key: {'*' * 20}{COHERE_API_KEY[-5:]}")
         print(f"User message: {user_message}")
         
-        # Initialize Cohere client
-        co = cohere.Client(api_key=COHERE_API_KEY)
+        # Initialize Cohere client with timeout
+        co = cohere.Client(api_key=COHERE_API_KEY, timeout=60)
         
         # Build comprehensive preamble with farming context
         preamble = f"""You are AgriCare AI, a friendly and helpful farming assistant for farmers. 
