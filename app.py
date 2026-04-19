@@ -1473,7 +1473,8 @@ def get_chatgpt_style_fallback(emotion, lang, farmer_profile=None, user_message=
             query_type = qtype
             break
     
-    import random
+    import time
+    current_time_ms = int(time.time() * 1000)
 
     # If it's a farming query, provide farming-specific response
     if query_type == 'price':
@@ -1482,7 +1483,7 @@ def get_chatgpt_style_fallback(emotion, lang, farmer_profile=None, user_message=
             """📊 Current Rates: 🥬 Tomato ₹18-25, 🥔 Potato ₹15-20, 🧅 Onion ₹20-30, 🌾 Paddy ₹2100-2300, 🌾 Wheat ₹2150-2400, 🌿 Cotton ₹6500-7000/q.""",
             """💵 Today's Prices: Vegetable prices ₹15-30/kg, Grains ₹2100-2400/q. Mandi rates vary - check local market for best returns!"""
         ]
-        return random.choice(prices)
+        return prices[current_time_ms % len(prices)]
     
     elif query_type == 'weather':
         weathers = [
@@ -1490,7 +1491,7 @@ def get_chatgpt_style_fallback(emotion, lang, farmer_profile=None, user_message=
             """🌧️ Monsoon Update: Light rain next 5 days, 25-32°C. Good for Kharif sowing, ideal for rice. Avoid spraying before rain. Best crops now: Rice, Soybean.""",
             """🌦️ Forecast: Days 1-3 light rain, 4-7 clear. Great for planting rice & soybean. Monitor humidity for pests. Good growing conditions!"""
         ]
-        return random.choice(weathers)
+        return weathers[current_time_ms % len(weathers)]
     
     elif query_type == 'crop':
         crops = [
@@ -1498,14 +1499,14 @@ def get_chatgpt_style_fallback(emotion, lang, farmer_profile=None, user_message=
             """🌱 Best Crops: 1)Paddy-lowland 2)Soybean-protein 3)Cotton-black soil 4)Sugarcane-year round 5)Vegetables-60-90 days. Use resistant varieties, rotate crops!""",
             """🌿 This Season: Rice, Soybean, Cotton ideal now. Tips: organic compost, NPK based on soil test, adequate irrigation. Visit Crop Recommendation for personalized help!"""
         ]
-        return random.choice(crops)
+        return crops[current_time_ms % len(crops)]
     
     elif query_type == 'disease':
         diseases = [
             """🩺 Diseases: Vegetables-Blight use copper fungicide, Rice-Blight use resistant varieties. Prevention: disease seeds, crop rotation, proper spacing.""",
             """🦠 Common Issues: Leaf spots-copper fungicide, Fruit rot-drainage+mulch, Stem rot-neem oil. Prevention: spacing, remove debris, certified seeds. Use Disease Detection!"""
         ]
-        return random.choice(diseases)
+        return diseases[current_time_ms % len(diseases)]
     
     elif query_type == 'soil':
         return f"""🧪 **Soil Health Tips**
@@ -1582,7 +1583,8 @@ def get_chatgpt_style_fallback(emotion, lang, farmer_profile=None, user_message=
             ]
         }
 
-        import random
+        import time
+        current_time_ms = int(time.time() * 1000)
 
         responses = chatgpt_responses.get(emotion, [
             f"I hear you, {farmer_name}. You know, sometimes just talking about things can help. What's been on your mind lately?",
@@ -1590,7 +1592,7 @@ def get_chatgpt_style_fallback(emotion, lang, farmer_profile=None, user_message=
             f"I appreciate you sharing that with me, {farmer_name}. How are you feeling about everything right now?"
         ])
 
-        return random.choice(responses)
+        return responses[current_time_ms % len(responses)]
     
     # Default farming response for unrecognized queries
     return f"""I'm here to help you with your farming questions! 🌾
@@ -1659,9 +1661,10 @@ def get_chatgpt_algorithm_fallback(emotion, lang, farmer_profile=None, user_mess
         f"You know, {farmer_name}, I'm really glad you reached out. What's been going on with you lately?"
     ])
 
-    # Return response using random for variety
-    import random
-    return random.choice(responses)
+    # Return response using time-based selection for variety
+    import time
+    current_time_ms = int(time.time() * 1000)
+    return responses[current_time_ms % len(responses)]
 
 # Enhanced fallback response function (legacy support)
 def get_enhanced_dynamic_response(emotion, lang, farmer_profile=None, user_message=None):
@@ -1696,9 +1699,10 @@ def get_enhanced_dynamic_response(emotion, lang, farmer_profile=None, user_messa
         f"I'm glad you reached out, {farmer_name}. How can I support you today?"
     ])
 
-    # Use random for variety
-    import random
-    return random.choice(responses)
+    # Use time-based selection for variety
+    import time
+    current_time_ms = int(time.time() * 1000)
+    return responses[current_time_ms % len(responses)]
 
 # Function to send emergency WhatsApp message using CallMeBot
 def send_emergency_whatsapp(farmer_profile, location, lang):
@@ -1898,15 +1902,17 @@ def get_deepai_response(user_message, emotion, lang, farmer_profile=None, conver
         }
 
         # Select random prompt variation
-        import random
+        import time
+        current_time_ms = int(time.time() * 1000)
         prompts = emotion_prompts.get(emotion, [f"You are AgriCare AI, a helpful companion for farmer {farmer_name}."])
-        system_prompt = random.choice(prompts)
+        system_prompt = prompts[current_time_ms % len(prompts)]
 
         # Prepare conversation context with more variety
         chat_history = ""
         if conversation_history:
-            # Use random number of recent chats (1-3) for variety
-            num_chats = random.randint(1, min(3, len(conversation_history)))
+            # Use time-based number of recent chats for variety
+            num_chats = (current_time_ms % 3) + 1
+            num_chats = min(num_chats, len(conversation_history)) if conversation_history else 0
             recent_chats = conversation_history[-num_chats:]
             for chat in recent_chats:
                 if chat.get('user') and chat.get('bot'):
@@ -1926,7 +1932,7 @@ def get_deepai_response(user_message, emotion, lang, farmer_profile=None, conver
 
         # Use different parameters for variety
         temperature_options = [0.7, 0.8, 0.9, 1.0]
-        temperature = random.choice(temperature_options)
+        temperature = temperature_options[current_time_ms % len(temperature_options)]
 
         data = {
             "text": full_prompt,
@@ -1964,7 +1970,7 @@ def get_deepai_response(user_message, emotion, lang, farmer_profile=None, conver
                     " Your safety matters to me - please connect with professional support as soon as possible.",
                     " I care about you and want you to know that help is available 24/7."
                 ]
-                generated_text += random.choice(crisis_responses)
+                generated_text += crisis_responses[current_time_ms % len(crisis_responses)]
             elif emotion == "sad":
                 comfort_responses = [
                     " I'm here for you whenever you need to talk or just need someone to listen.",
@@ -1972,7 +1978,7 @@ def get_deepai_response(user_message, emotion, lang, farmer_profile=None, conver
                     " Your feelings are valid, and I'm here to help you through whatever you're facing.",
                     " I'm glad you reached out - talking about it can help, and I'm here to listen."
                 ]
-                generated_text += random.choice(comfort_responses)
+                generated_text += comfort_responses[current_time_ms % len(comfort_responses)]
             elif emotion == "happy":
                 positive_responses = [
                     " It's wonderful to see you feeling positive - keep that good energy going!",
@@ -1980,7 +1986,7 @@ def get_deepai_response(user_message, emotion, lang, farmer_profile=None, conver
                     " Your positive outlook is inspiring - I'm happy to share in your good mood!",
                     " It's great to hear from you when you're feeling good - keep enjoying the moment!"
                 ]
-                generated_text += random.choice(positive_responses)
+                generated_text += positive_responses[current_time_ms % len(positive_responses)]
 
             # Ensure response is not empty
             if not generated_text.strip():
