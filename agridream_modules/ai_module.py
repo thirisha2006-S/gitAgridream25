@@ -247,32 +247,9 @@ Water-Saving Techniques:
 
 Tip: Irrigate at dawn for best results!"""
     
-    # For unrecognized messages - ask clarifying question
-    # If message is short/random, ask clarifying question
-    if len(user_message.strip()) < 3:
-        clarify_responses = [
-            "I see! Tell me more about what you'd like to know - I'm here to help!",
-            "That's interesting! Would you like to ask about farming, weather, prices, or something else?",
-            "I understand! How can I help you specifically? Ask me about crops, diseases, soil, or irrigation!",
-            "Got it! What farming topic can I help you with today?",
-            "I'd love to help! Ask me about weather, crops, prices, or just share how you're feeling."
-        ]
-        return clarify_responses[current_time_ms % len(clarify_responses)]
-    
-    # For any other message, try to be more helpful
-    return f"""I understand you said: "{user_message}"
-
-I can help you with:
-- Weather and forecasts
-- Market prices
-- Crop recommendations
-- Plant diseases
-- Irrigation tips
-- Soil health
-
-Or if you're feeling down, I'm here to listen and chat!
-
-What would you like to know more about?"""
+    # For unrecognized messages - ONLY return simple error, let Cohere handle it
+    # This is LAST RESORT only - don't try to be smart
+    return "Sorry, I didn't get that. Could you try again?"
     
     query_type = None
     for qtype, keywords in farming_keywords.items():
