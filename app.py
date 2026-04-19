@@ -1903,6 +1903,8 @@ def get_deepai_response(user_message, emotion, lang, farmer_profile=None, conver
 # Function to get Cohere response
 def get_cohere_response(user_message, emotion, lang, farmer_profile=None, conversation_history=None):
     """Generate response using Cohere API - with context awareness"""
+    import traceback
+    
     try:
         farmer_name = farmer_profile.get('name', 'friend') if farmer_profile else 'friend'
         
@@ -1914,11 +1916,12 @@ def get_cohere_response(user_message, emotion, lang, farmer_profile=None, conver
         co = cohere.Client(api_key=COHERE_API_KEY)
         
         # Build comprehensive preamble with farming context
-        preamble = f"""You are AgriCare AI, a friendly and helpful farming assistant. Your role is to:
+        preamble = f"""You are AgriCare AI, a friendly and helpful farming assistant for farmers. 
+Your role is to:
 1. Help farmers with agricultural questions (crops, weather, prices, soil, irrigation, diseases)
 2. Have natural conversations - greet back when someone says hi, answer questions directly
 3. Be supportive and empathetic when farmers share their feelings
-4. Keep responses conversational and helpful, not robotic
+4. Keep responses conversational, short, and helpful
 
 You know about:
 - Weather forecasts and monsoon updates
@@ -1928,40 +1931,27 @@ You know about:
 - Soil health and fertilizer tips
 - Irrigation methods and water-saving techniques
 
-Farmer's name: {farmer_name}
-Language: {lang if lang else 'English'}
-
-Always respond directly to what the user says. If they say hi, greet them back. If they ask about farming, give helpful advice."""
+Always respond directly to what the user says. If they greet you, greet them back. If they ask about farming, give helpful advice. If they seem sad or upset, be empathetic and supportive."""
         
-        # Prepare chat history for context
+        # Prepare chat history for context (convert to Cohere format)
         chat_history = []
         if conversation_history:
-            # Include last 3-4 exchanges for context
-            recent_chats = conversation_history[-4:] if len(conversation_history) > 4 else conversation_history
+            recent_chats = conversation_history[-3:] if len(conversation_history) > 3 else conversation_history
             for chat in recent_chats:
                 if chat.get('user') and chat.get('bot'):
                     chat_history.append({"role": "USER", "message": chat['user']})
                     chat_history.append({"role": "CHATBOT", "message": chat['bot']})
         
-        # Add empathy context based on detected emotion
-        emotion_context = ""
-        if emotion == "sad":
-            emotion_context = "The farmer seems a bit down. Be warm and supportive."
-        elif emotion == "angry":
-            emotion_context = "The farmer seems frustrated. Be understanding and calm."
-        elif emotion == "happy":
-            emotion_context = "The farmer seems happy. Be cheerful and positive."
-        
         print(f"Sending to Cohere: {user_message[:50]}...")
         
-        # Make the API call with context
+        # Make the API call
         response = co.chat(
             model="command-r-plus",
             message=user_message,
             preamble=preamble,
             chat_history=chat_history if chat_history else None,
             temperature=0.7,
-            max_tokens=250
+            max_tokens=200
         )
         
         generated_text = response.text.strip()
@@ -1971,20 +1961,12 @@ Always respond directly to what the user says. If they say hi, greet them back. 
             return None
             
         print(f"Cohere success! Response: {generated_text[:100]}...")
-        
-        # Add empathetic elements based on emotion if not already present
-        if emotion == "high_risk" and "help" not in generated_text.lower():
-            generated_text += " Please reach out to someone you trust - you matter."
-        elif emotion == "sad" and "here" not in generated_text.lower():
-            generated_text += " I'm here for you."
-        elif emotion == "happy" and ("great" not in generated_text.lower() and "wonderful" not in generated_text.lower()):
-            generated_text += " That's wonderful!"
-        
         return generated_text
         
     except Exception as e:
         print(f"=== COHERE ERROR: {str(e)} ===")
         print(f"Error type: {type(e).__name__}")
+        print(f"Full traceback: {traceback.format_exc()}")
         return None
 
 # Function to get DeepAI response
@@ -4240,29 +4222,32 @@ elif menu == get_text("menu_emotion", global_lang):
         except:
             detected_emotion = "happy"
         
-        # Get response from AI (with better error handling)
+        # Get response from AI
         print(f"=== Processing message: {user_input[:30]}... ===")
+        print(f"Detected emotion: {detected_emotion}")
         response = None
         
         # Try Cohere API first
         try:
             print("Calling Cohere API...")
             response = get_cohere_response(user_input, detected_emotion, global_lang, farmer_profile, messages)
-            print(f"Cohere response: {response[:100] if response else 'None'}...")
+            
+            if response:
+                print(f"Cohere returned: {response[:80]}...")
+            else:
+                print("Cohere returned None")
             
             # If response is None or empty, use fallback
             if not response or response.strip() == "":
-                print("Empty response from Cohere, using fallback...")
+                print("Empty/None from Cohere, using fallback...")
                 raise Exception("Empty response from Cohere")
         except Exception as e:
             print(f"AI Error: {e}")
-            print(f"Using fallback response...")
+            print("Using fallback response...")
             try:
                 from agridream_modules.ai_module import get_fallback_response
                 response = get_fallback_response(user_input, detected_emotion)
-                print(f"Fallback response: {response[:50]}...")
-                if not response:
-                    response = get_chatgpt_style_fallback(detected_emotion, global_lang, farmer_profile, user_input, messages)
+                print(f"Fallback returned: {response[:80]}...")
             except Exception as fallback_error:
                 print(f"Fallback error: {fallback_error}")
                 response = get_chatgpt_style_fallback(detected_emotion, global_lang, farmer_profile, user_input, messages)
