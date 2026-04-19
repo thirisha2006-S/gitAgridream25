@@ -31,6 +31,7 @@ except:
 
 try:
     import cohere as cohere_module
+    import cohere  # Direct import for use in functions
     COHERE_AVAILABLE = True
 except:
     cohere_module = None
