@@ -1965,6 +1965,11 @@ Always respond directly to what the user says. If they say hi, greet them back. 
         )
         
         generated_text = response.text.strip()
+        
+        if not generated_text:
+            print("Cohere returned empty text")
+            return None
+            
         print(f"Cohere success! Response: {generated_text[:100]}...")
         
         # Add empathetic elements based on emotion if not already present
@@ -1976,7 +1981,7 @@ Always respond directly to what the user says. If they say hi, greet them back. 
             generated_text += " That's wonderful!"
         
         return generated_text
-
+        
     except Exception as e:
         print(f"=== COHERE ERROR: {str(e)} ===")
         print(f"Error type: {type(e).__name__}")
@@ -4258,9 +4263,6 @@ elif menu == get_text("menu_emotion", global_lang):
                 print(f"Fallback response: {response[:50]}...")
                 if not response:
                     response = get_chatgpt_style_fallback(detected_emotion, global_lang, farmer_profile, user_input, messages)
-            except Exception as fallback_error:
-                print(f"Fallback error: {fallback_error}")
-                response = get_chatgpt_style_fallback(detected_emotion, global_lang, farmer_profile, user_input, messages)
             except Exception as fallback_error:
                 print(f"Fallback error: {fallback_error}")
                 response = get_chatgpt_style_fallback(detected_emotion, global_lang, farmer_profile, user_input, messages)
