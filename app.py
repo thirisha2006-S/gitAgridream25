@@ -1484,16 +1484,16 @@ def get_chatgpt_style_fallback(emotion, lang, farmer_profile=None, user_message=
     # What can you do patterns
     help_patterns = ['what can you do', 'help me', 'what can you help', 'features', 'your work', 'abilities']
     if any(p in user_msg_lower for p in help_patterns):
-        return f"""🌾 **{farmer_name}, I can help you with:}
+        return f"""[farmer_name], I can help you with:
 
-🌤️ **Weather** - Get forecast & monsoon updates
-💰 **Prices** - Check current market rates
-🌱 **Crops** - Get recommendations for your land
-🩺 **Diseases** - Identify plant health issues
-💧 **Irrigation** - Water-saving tips
-🧪 **Soil** - Soil health & fertilizer advice
+Weather - Get forecast and monsoon updates
+Prices - Check current market rates  
+Crops - Get recommendations for your land
+Diseases - Identify plant health issues
+Irrigation - Water-saving tips
+Soil - Soil health and fertilizer advice
 
-What would you like to know about?"""
+What would you like to know about?""".replace('[farmer_name]', farmer_name)
     
     # Thank you patterns
     thank_patterns = ['thank', 'thanks', 'thx', 'appreciate', 'grateful', 'nice', 'good']
@@ -1568,40 +1568,40 @@ What would you like to know about?"""
         return diseases[current_time_ms % len(diseases)]
     
     elif query_type == 'soil':
-        return f"""🧪 **Soil Health Tips**
+        return """[soil_health]
 
-**Key Nutrients for Crops:**
-• **Nitrogen (N)**: For leafy growth - green color
-• **Phosphorus (P)**: For root & flower development  
-• **Potassium (K)**: For disease resistance & fruit quality
+Key Nutrients for Crops:
+- Nitrogen (N): For leafy growth - green color
+- Phosphorus (P): For root and flower development
+- Potassium (K): For disease resistance and fruit quality
 
-**Recommended pH Level**: 6.0-7.5 (slightly acidic to neutral)
+Recommended pH Level: 6.0-7.5 (slightly acidic to neutral)
 
-**Fertilizer Tips:**
-• Use organic compost (5-10 tons/acre)
-• Apply NPK based on crop need
-• Add lime if soil is too acidic
+Fertilizer Tips:
+- Use organic compost (5-10 tons/acre)
+- Apply NPK based on crop need
+- Add lime if soil is too acidic
 
-💡 **Tip**: Get your soil tested at local agricultural office!"""
+Tip: Get your soil tested at local agricultural office!"""
     
     elif query_type == 'irrigation':
-        return f"""💧 **Irrigation Management**
+        return """[irrigation]
 
-**Water-Saving Techniques:**
-• 🚿 **Drip Irrigation**: Saves 40-60% water
-• 🌊 **Sprinkler System**: Even distribution
-• 📏 **Schedule**: Water early morning or evening
+Water-Saving Techniques:
+- Drip Irrigation: Saves 40-60% water
+- Sprinkler System: Even distribution
+- Schedule: Water early morning or evening
 
-**Crop Water Needs:**
-• Rice: 100-150mm per irrigation
-• Wheat: 50-60mm per irrigation
-• Vegetables: Frequent, shallow watering
+Crop Water Needs:
+- Rice: 100-150mm per irrigation
+- Wheat: 50-60mm per irrigation
+- Vegetables: Frequent, shallow watering
 
-**Tips:**
-✅ Check soil moisture before watering
-✅ Avoid overwatering - causes root rot
-✅ Use mulching to retain moisture
-✅ Repair leaks in irrigation systems"""
+Tips:
+- Check soil moisture before watering
+- Avoid overwatering - causes root rot
+- Use mulching to retain moisture
+- Repair leaks in irrigation systems"""
     
     # If it's an emotional/personal query, use the original emotional responses
     if query_type is None:
@@ -1668,17 +1668,17 @@ What would you like to know about?"""
         return clarify_responses[current_time_ms % len(clarify_responses)]
     
     # For any other message, show what we can help with
-    return f"""I understand you said: "{user_message}"
+    return """I understand you said: "{user_msg}"
 
 I can help you with:
-• 🌤️ Weather & forecasts
-• 💰 Market prices  
-• 🌱 Crop recommendations
-• 🩺 Plant diseases
-• 💧 Irrigation tips
-• 🧪 Soil health
+- Weather and forecasts
+- Market prices
+- Crop recommendations
+- Plant diseases
+- Irrigation tips
+- Soil health
 
-What would you like to know more about?"""
+What would you like to know more about?""".replace("{user_msg}", user_message)
 
 # Advanced ChatGPT Algorithm Fallback Function
 def get_chatgpt_algorithm_fallback(emotion, lang, farmer_profile=None, user_message=None, conversation_history=None):
