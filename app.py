@@ -1905,6 +1905,11 @@ def get_cohere_response(user_message, emotion, lang, farmer_profile=None, conver
     """Generate response using Cohere API - with context awareness"""
     import traceback
     
+    print(">>> get_cohere_response STARTED")
+    print(f">>> user_message = '{user_message}'")
+    print(f">>> emotion = '{emotion}'")
+    print(f">>> lang = '{lang}'")
+    
     try:
         farmer_name = farmer_profile.get('name', 'friend') if farmer_profile else 'friend'
         
@@ -1914,6 +1919,8 @@ def get_cohere_response(user_message, emotion, lang, farmer_profile=None, conver
         
         # Initialize Cohere client with timeout
         co = cohere.Client(api_key=COHERE_API_KEY, timeout=60)
+        
+        print(">>> Cohere client created, making API call...")
         
         # Build comprehensive preamble with farming context
         preamble = f"""You are AgriCare AI, a friendly and helpful farming assistant for farmers. 
@@ -1954,6 +1961,8 @@ Always respond directly to what the user says. If they greet you, greet them bac
             max_tokens=200
         )
         
+        print(">>> API call completed, processing response...")
+        
         generated_text = response.text.strip()
         
         if not generated_text:
@@ -1961,12 +1970,14 @@ Always respond directly to what the user says. If they greet you, greet them bac
             return None
             
         print(f"Cohere success! Response: {generated_text[:100]}...")
+        print(">>> Returning Cohere response NOW")
         return generated_text
         
     except Exception as e:
         print(f"=== COHERE ERROR: {str(e)} ===")
         print(f"Error type: {type(e).__name__}")
         print(f"Full traceback: {traceback.format_exc()}")
+        print(">>> Returning None due to error")
         return None
 
 # Function to get DeepAI response
@@ -4227,7 +4238,7 @@ elif menu == get_text("menu_emotion", global_lang):
         print(f"Detected emotion: {detected_emotion}")
         response = None
         
-# Try Cohere API first
+        # Try Cohere API first
         try:
             print("Calling Cohere API...")
             response = get_cohere_response(user_input, detected_emotion, global_lang, farmer_profile, messages)
@@ -4261,7 +4272,7 @@ elif menu == get_text("menu_emotion", global_lang):
                 print(f"Fallback error: {fallback_error}")
                 response = get_chatgpt_style_fallback(detected_emotion, global_lang, farmer_profile, user_input, messages)
             
-# Add to messages
+            # Add to messages
             st.session_state.emotion_messages.append({
                 "user": user_input,
                 "bot": response,
