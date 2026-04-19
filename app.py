@@ -4232,6 +4232,9 @@ elif menu == get_text("menu_emotion", global_lang):
             print("Calling Cohere API...")
             response = get_cohere_response(user_input, detected_emotion, global_lang, farmer_profile, messages)
             
+            # ALWAYS print what we got - THIS IS THE KEY
+            print(f"DEBUG: response type = {type(response)}, value = {response}")
+            
             if response:
                 print(f"Cohere returned: {response[:80]}...")
             else:
@@ -4241,6 +4244,7 @@ elif menu == get_text("menu_emotion", global_lang):
             if not response or response.strip() == "":
                 print("Empty/None from Cohere, using fallback...")
                 raise Exception("Empty response from Cohere")
+                
         except Exception as e:
             print(f"AI Error: {e}")
             print("Using fallback response...")
