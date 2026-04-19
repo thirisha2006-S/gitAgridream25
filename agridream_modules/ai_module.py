@@ -70,9 +70,57 @@ def get_fallback_response(user_message, emotion):
     
     user_msg_lower = user_message.lower() if user_message else ""
     
+    # FIRST: Check for emotional/mental health crisis patterns (highest priority)
+    crisis_patterns = [
+        'suicide', 'kill myself', 'end my life', 'want to die', 'no hope', 'better without me',
+        'burden', 'worthless', 'depressed', 'hopeless', 'give up', 'ending everything',
+        'death', 'die', 'suicidal', 'end it all', 'going to die', 'kill me', 'not worth',
+        'nothing matters', 'no reason', 'give up on me', 'end it', 'final'
+    ]
+    if any(p in user_msg_lower for p in crisis_patterns):
+        crisis_responses = [
+            "I hear you, and I care about you. You're not alone. Please reach out to someone you trust - a family member, friend, or helpline. Your life matters. Can we talk about what's making you feel this way?",
+            "I'm concerned about you. Please remember that help is available. You can call a helpline or talk to someone you trust. You're important and your feelings are valid. Let's talk about what's happening.",
+            "I understand you're going through a difficult time. Please reach out for support - talk to a family member, friend, or call a helpline. You don't have to face this alone. I'm here to listen."
+        ]
+        return crisis_responses[current_time_ms % len(crisis_responses)]
+    
+    # SECOND: Check for sad/down patterns
+    sad_patterns = ['feeling bad', 'feeling sad', 'feel bad', 'feel sad', 'not feeling good', 
+                   'feeling down', 'feeling low', 'upset', 'worried', 'stress', 'stressed',
+                   'feeling terrible', 'not okay', 'sad', 'depressed', 'cry', 'crying',
+                   'alone', 'tired', 'exhausted', 'lost', 'hopeless', 'help']
+    if any(p in user_msg_lower for p in sad_patterns):
+        sad_responses = [
+            "I'm here for you. I can hear you're going through a tough time. Would you like to talk about what's troubling you? Remember, it's okay to not be okay.",
+            "I understand you're feeling down. That's completely valid. I'm here to listen. What's been on your mind?",
+            "I'm sorry you're feeling this way. You're not alone - I'm here with you. Would you like to share what's making you feel bad?"
+        ]
+        return sad_responses[current_time_ms % len(sad_responses)]
+    
+    # THIRD: Check for acknowledgment patterns (ok, yeah, yes, etc.)
+    ack_patterns = ['ok', 'okay', 'yeah', 'yes', 'sure', 'alright', 'fine', 'good']
+    if any(p in user_msg_lower for p in ack_patterns):
+        ack_responses = [
+            "Great! How can I help you today? Ask me about weather, crops, prices, or anything else!",
+            "Awesome! What would you like to know about farming?",
+            "Perfect! I'm here to help. What do you need assistance with?"
+        ]
+        return ack_responses[current_time_ms % len(ack_responses)]
+    
+    # FOURTH: Check for emotional support requests
+    support_patterns = ['talk', 'share', 'chat', 'listen', 'help me', 'need someone']
+    if any(p in user_msg_lower for p in support_patterns):
+        support_responses = [
+            "Of course! I'm here to listen. What's on your mind?",
+            "I'm here for you. Tell me what's going on.",
+            "Absolutely! I'm here to chat. What's been happening?"
+        ]
+        return support_responses[current_time_ms % len(support_responses)]
+    
     # Analyze the message type and respond contextually
     # Greeting patterns
-    greeting_patterns = ['hi', 'hello', 'hey', 'namaste', 'vanakkam', 'salam', 'good morning', 'good evening', 'good afternoon']
+    greeting_patterns = ['hi', 'hello', 'hey', 'namaste', 'vanakkam', 'salam', 'good morning', 'good evening', 'good afternoon', 'hii', 'helo', 'hallo']
     if any(greet in user_msg_lower for greet in greeting_patterns):
         greetings = [
             f"Namaste! 🌾 How can I help you today?",
@@ -84,7 +132,7 @@ def get_fallback_response(user_message, emotion):
         return greetings[current_time_ms % len(greetings)]
     
     # How are you patterns
-    how_patterns = ['how are you', 'how r u', 'howdy', 'kaise ho', 'evaru', 'status']
+    how_patterns = ['how are you', 'how r u', 'howdy', 'kaise ho', 'evaru', 'status', 'you doing']
     if any(p in user_msg_lower for p in how_patterns):
         how_responses = [
             "I'm doing well, thank you for asking! 🌾 Ready to help you with your farming questions.",
@@ -96,15 +144,15 @@ def get_fallback_response(user_message, emotion):
     # What can you do patterns
     help_patterns = ['what can you do', 'help me', 'what can you help', 'features', 'your work']
     if any(p in user_msg_lower for p in help_patterns):
-        return """🌾 **I can help you with:**
+        return """I can help you with:
 
-🌤️ **Weather** - Get forecast & monsoon updates
-💰 **Prices** - Check current market rates
-🌱 **Crops** - Get recommendations for your land
-🩺 **Diseases** - Identify plant health issues
-💧 **Irrigation** - Water-saving tips
-🧪 **Soil** - Soil health & fertilizer advice
-💬 **Chat** - Just talk or share how you're feeling!
+Weather - Get forecast and monsoon updates
+Prices - Check current market rates
+Crops - Get recommendations for your land
+Diseases - Identify plant health issues
+Irrigation - Water-saving tips
+Soil - Soil health and fertilizer advice
+Chat - Just talk or share how you're feeling!
 
 What would you like to know about?"""
     
@@ -131,12 +179,100 @@ What would you like to know about?"""
     # Check for farming-related keywords
     farming_keywords = {
         'price': ['price', 'cost', 'rate', 'market', 'sell', 'buy', 'rupee', 'income', 'bhaw', 'भाव'],
-        'weather': ['weather', 'rain', 'monsoon', 'drought', 'temperature', 'humidity', 'forecast'],
+        'weather': ['weather', 'rain', 'monsoon', 'drought', 'temperature', 'humidity', 'forecast', 'rain'],
         'crop': ['crop', 'plant', 'grow', 'harvest', 'field', 'paddy', 'wheat', 'rice', 'cotton', 'sugarcane'],
         'disease': ['disease', 'pest', 'insect', 'fungal', 'virus', 'sick', 'yellow', 'drying'],
         'soil': ['soil', 'fertilizer', 'nutrient', 'nitrogen', 'phosphorus', 'potassium', 'ph'],
         'irrigation': ['water', 'irrigation', 'drip', 'sprinkler', 'canal', 'borewell']
     }
+    
+    query_type = None
+    for qtype, keywords in farming_keywords.items():
+        if any(kw in user_msg_lower for kw in keywords):
+            query_type = qtype
+            break
+    
+    # If it's a farming query, provide farming-specific response
+    if query_type == 'price':
+        prices = [
+            "Market Prices: Tomato 18-25/kg, Potato 15-20/kg, Onion 20-30/kg, Rice 2100-2300/q, Wheat 2150-2400/q. Check Price page for more!",
+            "Current Rates: Tomato 18-25, Potato 15-20, Onion 20-30, Paddy 2100-2300, Wheat 2150-2400/q.",
+            "Today's Prices: Vegetable prices 15-30/kg, Grains 2100-2400/q. Mandi rates vary - check local market!"
+        ]
+        return prices[current_time_ms % len(prices)]
+    
+    elif query_type == 'weather':
+        weathers = [
+            "Weather: 28-35C, Humidity 60-70%, Rain in 3-5 days. Good for Kharif! Delay irrigation, protect seedlings.",
+            "Monsoon Update: Light rain next 5 days, 25-32C. Good for rice sowing. Avoid spraying before rain.",
+            "Forecast: Days 1-3 light rain, 4-7 clear. Great for planting rice and soybean!"
+        ]
+        return weathers[current_time_ms % len(weathers)]
+    
+    elif query_type == 'crop':
+        crops = [
+            "Kharif Crops: 1)Rice 2)Soybean 3)Cotton 4)Sugarcane 5)Vegetables. Tips: certified seeds, soil test, monitor pests.",
+            "Best Crops: 1)Paddy 2)Soybean 3)Cotton 4)Sugarcane 5)Vegetables. Use resistant varieties, rotate crops!",
+            "This Season: Rice, Soybean, Cotton ideal now. Tips: organic compost, NPK based on soil test!"
+        ]
+        return crops[current_time_ms % len(crops)]
+    
+    elif query_type == 'disease':
+        diseases = [
+            "Diseases: Vegetables-Blight use copper fungicide, Rice-Blight use resistant varieties. Prevention: disease-free seeds, crop rotation.",
+            "Common Issues: Leaf spots-copper fungicide, Fruit rot-drainage+mulch. Prevention: spacing, remove debris. Use Disease Detection!"
+        ]
+        return diseases[current_time_ms % len(diseases)]
+    
+    elif query_type == 'soil':
+        return """Soil Health Tips
+
+Key Nutrients for Crops:
+- Nitrogen (N): For leafy growth - green color
+- Phosphorus (P): For root and flower development
+- Potassium (K): For disease resistance and fruit quality
+
+Recommended pH Level: 6.0-7.5
+
+Tip: Get your soil tested at local agricultural office!"""
+    
+    elif query_type == 'irrigation':
+        return """Irrigation Management
+
+Water-Saving Techniques:
+- Drip irrigation - 40-60% water savings
+- Sprinkler system - uniform water distribution
+- Mulching - reduces evaporation
+- Early morning watering - less loss
+
+Tip: Irrigate at dawn for best results!"""
+    
+    # For unrecognized messages - ask clarifying question
+    # If message is short/random, ask clarifying question
+    if len(user_message.strip()) < 3:
+        clarify_responses = [
+            "I see! Tell me more about what you'd like to know - I'm here to help!",
+            "That's interesting! Would you like to ask about farming, weather, prices, or something else?",
+            "I understand! How can I help you specifically? Ask me about crops, diseases, soil, or irrigation!",
+            "Got it! What farming topic can I help you with today?",
+            "I'd love to help! Ask me about weather, crops, prices, or just share how you're feeling."
+        ]
+        return clarify_responses[current_time_ms % len(clarify_responses)]
+    
+    # For any other message, try to be more helpful
+    return f"""I understand you said: "{user_message}"
+
+I can help you with:
+- Weather and forecasts
+- Market prices
+- Crop recommendations
+- Plant diseases
+- Irrigation tips
+- Soil health
+
+Or if you're feeling down, I'm here to listen and chat!
+
+What would you like to know more about?"""
     
     query_type = None
     for qtype, keywords in farming_keywords.items():

@@ -4240,7 +4240,7 @@ elif menu == get_text("menu_emotion", global_lang):
         except:
             detected_emotion = "happy"
         
-# Get response from AI (with better error handling)
+        # Get response from AI (with better error handling)
         print(f"=== Processing message: {user_input[:30]}... ===")
         response = None
         
