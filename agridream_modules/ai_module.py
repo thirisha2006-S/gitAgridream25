@@ -45,7 +45,7 @@ def get_cohere_response(user_message, emotion, lang, farmer_profile=None, conver
         chat_history.append({"role": "USER", "message": user_message})
         
         response = co.chat(
-            model="command-r-plus-08-2024",
+            model="command-r-plus",
             preamble=system_prompt,
             chat_history=chat_history,
             message=user_message,

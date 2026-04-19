@@ -1956,7 +1956,7 @@ Always respond directly to what the user says. If they say hi, greet them back. 
         
         # Make the API call with context
         response = co.chat(
-            model="command-r-plus-08-2024",
+            model="command-r-plus",
             message=user_message,
             preamble=preamble,
             chat_history=chat_history if chat_history else None,
