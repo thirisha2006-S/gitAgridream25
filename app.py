@@ -4227,7 +4227,7 @@ elif menu == get_text("menu_emotion", global_lang):
         print(f"Detected emotion: {detected_emotion}")
         response = None
         
-        # Try Cohere API first
+# Try Cohere API first
         try:
             print("Calling Cohere API...")
             response = get_cohere_response(user_input, detected_emotion, global_lang, farmer_profile, messages)
@@ -4235,16 +4235,19 @@ elif menu == get_text("menu_emotion", global_lang):
             # ALWAYS print what we got - THIS IS THE KEY
             print(f"DEBUG: response type = {type(response)}, value = {response}")
             
-            if response:
+            if response and response.strip():
                 print(f"Cohere returned: {response[:80]}...")
-                # USE THE COHERE RESPONSE - don't fall through to fallback
+                # IMPORTANT: Use the Cohere response - don't continue to fallback
+                # Add to messages
+                st.session_state.emotion_messages.append({
+                    "user": user_input,
+                    "bot": response,
+                    "emotion": detected_emotion,
+                    "timestamp": datetime.now()
+                })
+                st.rerun()
             else:
-                print("Cohere returned None - using fallback")
-                raise Exception("Empty response from Cohere")
-            
-            # If response is None or empty, use fallback
-            if not response or response.strip() == "":
-                print("Empty/None from Cohere, using fallback...")
+                print("Cohere returned None/empty - using fallback")
                 raise Exception("Empty response from Cohere")
                 
         except Exception as e:
@@ -4257,18 +4260,17 @@ elif menu == get_text("menu_emotion", global_lang):
             except Exception as fallback_error:
                 print(f"Fallback error: {fallback_error}")
                 response = get_chatgpt_style_fallback(detected_emotion, global_lang, farmer_profile, user_input, messages)
-        
-        # Add to messages
-        st.session_state.emotion_messages.append({
-            "user": user_input,
-            "bot": response,
-            "emotion": detected_emotion,
-            "timestamp": datetime.now()
-        })
+            
+# Add to messages
+            st.session_state.emotion_messages.append({
+                "user": user_input,
+                "bot": response,
+                "emotion": detected_emotion,
+                "timestamp": datetime.now()
+            })
         
         # Auto-send emergency alert if high risk detected
         if detected_emotion == "high_risk":
-            # Get emergency contact from farmer profile
             emergency_phone = farmer_profile.get('family1', {}).get('phone', '')
             if not emergency_phone:
                 emergency_phone = farmer_profile.get('emergency_contact', '')
