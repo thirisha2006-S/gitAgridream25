@@ -4234,23 +4234,19 @@ elif menu == get_text("menu_emotion", global_lang):
         except:
             detected_emotion = "happy"
         
-        # Get response from AI
-        print(f"=== Processing message: {user_input[:30]}... ===")
-        print(f"Detected emotion: {detected_emotion}")
+        # Get response from AI - SIMPLE DIRECT FLOW
+        print(f"=== Processing: {user_input} ===")
         response = None
         
-        # Try Cohere API first
+        # DIRECT CALL TO COHERE - NO PRECONDITIONS
         try:
-            print("Calling Cohere API...")
+            print(">>> Calling get_cohere_response()...")
             response = get_cohere_response(user_input, detected_emotion, global_lang, farmer_profile, messages)
-            
-            # ALWAYS print what we got - THIS IS THE KEY
-            print(f"DEBUG: response type = {type(response)}, value = {response}")
+            print(f">>> get_cohere_response returned: {response}")
             
             if response and response.strip():
-                print(f"Cohere returned: {response[:80]}...")
-                # IMPORTANT: Use the Cohere response - don't continue to fallback
-                # Add to messages
+                # SUCCESS - use Cohere response
+                print(f">>> Using Cohere response: {response[:50]}...")
                 st.session_state.emotion_messages.append({
                     "user": user_input,
                     "bot": response,
@@ -4259,27 +4255,23 @@ elif menu == get_text("menu_emotion", global_lang):
                 })
                 st.rerun()
             else:
-                print("Cohere returned None/empty - using fallback")
-                raise Exception("Empty response from Cohere")
+                # Cohere returned empty - only then use fallback
+                print(">>> Cohere returned empty, using fallback")
+                raise Exception("Empty")
                 
         except Exception as e:
-            print(f"AI Error: {e}")
-            print("Using fallback response...")
-            try:
-                from agridream_modules.ai_module import get_fallback_response
-                response = get_fallback_response(user_input, detected_emotion)
-                print(f"Fallback returned: {response[:80]}...")
-            except Exception as fallback_error:
-                print(f"Fallback error: {fallback_error}")
-                response = get_chatgpt_style_fallback(detected_emotion, global_lang, farmer_profile, user_input, messages)
+            print(f">>> Error: {e}")
+            print(">>> Using fallback...")
+            # Fallback only for API failures
+            response = f"I hear you. Tell me more about what's on your mind."
             
-            # Add to messages
             st.session_state.emotion_messages.append({
                 "user": user_input,
                 "bot": response,
                 "emotion": detected_emotion,
                 "timestamp": datetime.now()
             })
+            st.rerun()
         
         # Auto-send emergency alert if high risk detected
         if detected_emotion == "high_risk":
@@ -4296,7 +4288,7 @@ elif menu == get_text("menu_emotion", global_lang):
                 except Exception as e:
                     print(f"Alert error: {e}")
         
-        # Save to database
+# Save to database
         try:
             database.save_chat_message(
                 farmer_id=st.session_state.get('current_farmer_id', 1),
@@ -4307,8 +4299,6 @@ elif menu == get_text("menu_emotion", global_lang):
             )
         except:
             pass
-        
-        st.rerun()
     
     # Clear button
     if st.button("🗑️ Clear Chat"):
