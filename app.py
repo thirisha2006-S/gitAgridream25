@@ -1449,12 +1449,71 @@ Remember: You're having a real conversation, not giving advice. Build genuine co
 def get_chatgpt_style_fallback(emotion, lang, farmer_profile=None, user_message=None, conversation_history=None):
     import random
     import hashlib
+    import time
     
     farmer_name = farmer_profile.get('name', 'friend') if farmer_profile else 'friend'
     msg_hash = int(hashlib.md5(str(user_message).encode()).hexdigest()[:8], 16) if user_message else 0
+    current_time_ms = int(time.time() * 1000)
     
     # Analyze user message to determine what they're asking about
     user_msg_lower = user_message.lower() if user_message else ""
+    
+    # Handle different message patterns
+    # Greeting patterns
+    greeting_patterns = ['hi', 'hello', 'hey', 'namaste', 'vanakkam', 'salam', 'good morning', 'good evening', 'good afternoon', 'hallo', 'helo']
+    if any(greet in user_msg_lower for greet in greeting_patterns):
+        greetings = [
+            f"Namaste, {farmer_name}! 🌾 How can I help you today?",
+            f"Hello there! 🌱 How are you doing? Is there something I can help you with?",
+            f"Hey {farmer_name}! 🚜 Welcome! What would you like to know?",
+            f"Hi! 💚 Great to hear from you! Ask me about farming, weather, or just chat!",
+            f"Namaste, friend! 🌻 How can I assist you today?"
+        ]
+        return greetings[current_time_ms % len(greetings)]
+    
+    # How are you patterns
+    how_patterns = ['how are you', 'how r u', 'howdy', 'kaise ho', 'evaru', 'status', 'you doing']
+    if any(p in user_msg_lower for p in how_patterns):
+        how_responses = [
+            f"I'm doing well, {farmer_name}! 🌾 Ready to help you with your farming questions.",
+            f"I'm here and ready to help! 💚 How can I assist you today?",
+            f"Doing great! 🚜 Looking forward to answering your questions!"
+        ]
+        return how_responses[current_time_ms % len(how_responses)]
+    
+    # What can you do patterns
+    help_patterns = ['what can you do', 'help me', 'what can you help', 'features', 'your work', 'abilities']
+    if any(p in user_msg_lower for p in help_patterns):
+        return f"""🌾 **{farmer_name}, I can help you with:}
+
+🌤️ **Weather** - Get forecast & monsoon updates
+💰 **Prices** - Check current market rates
+🌱 **Crops** - Get recommendations for your land
+🩺 **Diseases** - Identify plant health issues
+💧 **Irrigation** - Water-saving tips
+🧪 **Soil** - Soil health & fertilizer advice
+
+What would you like to know about?"""
+    
+    # Thank you patterns
+    thank_patterns = ['thank', 'thanks', 'thx', 'appreciate', 'grateful', 'nice', 'good']
+    if any(p in user_msg_lower for p in thank_patterns):
+        thanks_responses = [
+            f"You're welcome, {farmer_name}! 😊 Happy to help! Anything else?",
+            f"No problem! 🌾 Feel free to ask anytime!",
+            f"Glad I could help! 💚 What else can I do for you?"
+        ]
+        return thanks_responses[current_time_ms % len(thanks_responses)]
+    
+    # Goodbye patterns
+    bye_patterns = ['bye', 'goodbye', 'see you', 'take care', 'valhalla', 'exit']
+    if any(p in user_msg_lower for p in bye_patterns):
+        bye_responses = [
+            f"Goodbye, {farmer_name}! 🌾 Take care of your crops!",
+            f"Namaste! 🚜 Hope to see you again soon!",
+            f"Bye! 💚 Wishing you a great harvest!"
+        ]
+        return bye_responses[current_time_ms % len(bye_responses)]
     
     # Check if it's a farming-related query
     farming_keywords = {
@@ -1595,17 +1654,31 @@ def get_chatgpt_style_fallback(emotion, lang, farmer_profile=None, user_message=
         return responses[current_time_ms % len(responses)]
     
     # Default farming response for unrecognized queries
-    return f"""I'm here to help you with your farming questions! 🌾
+    # Add contextual response based on user message
+    clarify_responses = [
+        f"I see! Tell me more about what you'd like to know, {farmer_name}! 🌾",
+        f"That's interesting, {farmer_name}! 💚 Would you like to ask about farming, weather, prices, or something else?",
+        f"I understand! 🌱 How can I help you specifically? Ask me about crops, diseases, soil, or irrigation!",
+        f"Got it, {farmer_name}! 🚜 What farming topic can I help you with today?",
+        f"I'd love to help! 💧 Ask me about weather, crops, prices, or just share how you're feeling."
+    ]
+    
+    # If message is short/random, ask clarifying question
+    if len(user_message.strip()) < 3:
+        return clarify_responses[current_time_ms % len(clarify_responses)]
+    
+    # For any other message, show what we can help with
+    return f"""I understand you said: "{user_message}"
 
-You can ask me about:
-• 💰 Market prices for crops
-• 🌤️ Weather updates and forecasts
+I can help you with:
+• 🌤️ Weather & forecasts
+• 💰 Market prices  
 • 🌱 Crop recommendations
-• 🩺 Plant diseases and solutions
+• 🩺 Plant diseases
 • 💧 Irrigation tips
 • 🧪 Soil health
 
-Or just share how you're feeling - I'm here to listen!"""
+What would you like to know more about?"""
 
 # Advanced ChatGPT Algorithm Fallback Function
 def get_chatgpt_algorithm_fallback(emotion, lang, farmer_profile=None, user_message=None, conversation_history=None):

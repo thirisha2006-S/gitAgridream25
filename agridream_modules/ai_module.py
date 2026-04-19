@@ -61,20 +61,81 @@ def get_cohere_response(user_message, emotion, lang, farmer_profile=None, conver
 
 
 def get_fallback_response(user_message, emotion):
-    """Enhanced fallback responses when API fails"""
+    """Enhanced fallback responses when API fails - analyzes message for contextual response"""
     import hashlib
+    import time
+    
     msg_hash = int(hashlib.md5(str(user_message).encode()).hexdigest()[:8], 16) if user_message else 0
+    current_time_ms = int(time.time() * 1000)
     
     user_msg_lower = user_message.lower() if user_message else ""
     
-    # Check query type
+    # Analyze the message type and respond contextually
+    # Greeting patterns
+    greeting_patterns = ['hi', 'hello', 'hey', 'namaste', 'vanakkam', 'salam', 'good morning', 'good evening', 'good afternoon']
+    if any(greet in user_msg_lower for greet in greeting_patterns):
+        greetings = [
+            f"Namaste! 🌾 How can I help you today?",
+            f"Hello! 🌱 How are you doing? Is there something I can help you with?",
+            f"Hey there! 🚜 Welcome to AgriCare AI! What would you like to know?",
+            f"Hi! 💚 Great to hear from you! Ask me about farming, weather, prices, or just chat!",
+            f"Namaste, friend! 🌻 How can I assist you today?"
+        ]
+        return greetings[current_time_ms % len(greetings)]
+    
+    # How are you patterns
+    how_patterns = ['how are you', 'how r u', 'howdy', 'kaise ho', 'evaru', 'status']
+    if any(p in user_msg_lower for p in how_patterns):
+        how_responses = [
+            "I'm doing well, thank you for asking! 🌾 Ready to help you with your farming questions.",
+            "I'm here and ready to help! 💚 How can I assist you today?",
+            "Doing great! 🚜 Looking forward to answering your questions about crops, weather, or anything else!"
+        ]
+        return how_responses[current_time_ms % len(how_responses)]
+    
+    # What can you do patterns
+    help_patterns = ['what can you do', 'help me', 'what can you help', 'features', 'your work']
+    if any(p in user_msg_lower for p in help_patterns):
+        return """🌾 **I can help you with:**
+
+🌤️ **Weather** - Get forecast & monsoon updates
+💰 **Prices** - Check current market rates
+🌱 **Crops** - Get recommendations for your land
+🩺 **Diseases** - Identify plant health issues
+💧 **Irrigation** - Water-saving tips
+🧪 **Soil** - Soil health & fertilizer advice
+💬 **Chat** - Just talk or share how you're feeling!
+
+What would you like to know about?"""
+    
+    # Thank you patterns
+    thank_patterns = ['thank', 'thanks', 'thx', 'appreciate', 'grateful']
+    if any(p in user_msg_lower for p in thank_patterns):
+        thanks_responses = [
+            "You're welcome! 😊 Happy to help! Anything else?",
+            "No problem! 🌾 Feel free to ask anytime!",
+            "Glad I could help! 💚 What else can I do for you?"
+        ]
+        return thanks_responses[current_time_ms % len(thanks_responses)]
+    
+    # Goodbye patterns
+    bye_patterns = ['bye', 'goodbye', 'see you', 'take care', 'valhalla']
+    if any(p in user_msg_lower for p in bye_patterns):
+        bye_responses = [
+            "Goodbye, friend! 🌾 Take care of your crops!",
+            "Namaste! 🚜 Hope to see you again soon!",
+            "Bye! 💚 Wishing you a great harvest!"
+        ]
+        return bye_responses[current_time_ms % len(bye_responses)]
+    
+    # Check for farming-related keywords
     farming_keywords = {
-        'price': ['price', 'cost', 'rate', 'market', 'sell', 'buy', 'rupee', 'income'],
-        'weather': ['weather', 'rain', 'monsoon', 'drought', 'temperature', 'humidity'],
-        'crop': ['crop', 'plant', 'grow', 'harvest', 'field', 'paddy', 'wheat', 'rice'],
-        'disease': ['disease', 'pest', 'insect', 'fungal', 'virus', 'sick'],
-        'soil': ['soil', 'fertilizer', 'nutrient', 'nitrogen', 'phosphorus', 'potassium'],
-        'irrigation': ['water', 'irrigation', 'drip', 'sprinkler', 'canal']
+        'price': ['price', 'cost', 'rate', 'market', 'sell', 'buy', 'rupee', 'income', 'bhaw', 'भाव'],
+        'weather': ['weather', 'rain', 'monsoon', 'drought', 'temperature', 'humidity', 'forecast'],
+        'crop': ['crop', 'plant', 'grow', 'harvest', 'field', 'paddy', 'wheat', 'rice', 'cotton', 'sugarcane'],
+        'disease': ['disease', 'pest', 'insect', 'fungal', 'virus', 'sick', 'yellow', 'drying'],
+        'soil': ['soil', 'fertilizer', 'nutrient', 'nitrogen', 'phosphorus', 'potassium', 'ph'],
+        'irrigation': ['water', 'irrigation', 'drip', 'sprinkler', 'canal', 'borewell']
     }
     
     query_type = None
@@ -83,10 +144,7 @@ def get_fallback_response(user_message, emotion):
             query_type = qtype
             break
     
-    # Price responses - use time-based
-    import time
-    current_time_ms = int(time.time() * 1000)
-    
+    # If it's a farming query, provide farming-specific response
     if query_type == 'price':
         prices = [
             "💰 Market Prices: Tomato ₹18-25/kg, Potato ₹15-20/kg, Onion ₹20-30/kg, Rice ₹2100-2300/q, Wheat ₹2150-2400/q. Check Price page for more!",
@@ -95,7 +153,6 @@ def get_fallback_response(user_message, emotion):
         ]
         return prices[current_time_ms % len(prices)]
     
-    # Weather responses
     elif query_type == 'weather':
         weathers = [
             "🌤️ Weather: 28-35°C, Humidity 60-70%, Rain in 3-5 days. Good for Kharif! Delay irrigation, protect seedlings.",
@@ -104,7 +161,6 @@ def get_fallback_response(user_message, emotion):
         ]
         return weathers[current_time_ms % len(weathers)]
     
-    # Crop responses
     elif query_type == 'crop':
         crops = [
             "🌾 Kharif Crops: 1)Rice 2)Soybean 3)Cotton 4)Sugarcane 5)Vegetables. Tips: certified seeds, soil test, monitor pests.",
@@ -113,7 +169,6 @@ def get_fallback_response(user_message, emotion):
         ]
         return crops[current_time_ms % len(crops)]
     
-    # Disease responses
     elif query_type == 'disease':
         diseases = [
             "🩺 Diseases: Vegetables-Blight use copper fungicide, Rice-Blight use resistant varieties. Prevention: disease-free seeds, crop rotation.",
@@ -121,7 +176,6 @@ def get_fallback_response(user_message, emotion):
         ]
         return diseases[current_time_ms % len(diseases)]
     
-    # Soil responses
     elif query_type == 'soil':
         return """🧪 Soil Health Tips
 
@@ -134,7 +188,6 @@ Recommended pH Level: 6.0-7.5
 
 💡 Tip: Get your soil tested at local agricultural office!"""
     
-    # Irrigation responses
     elif query_type == 'irrigation':
         return """💧 Irrigation Management
 
@@ -146,26 +199,31 @@ Water-Saving Techniques:
 
 💡 Tip: Irrigate at dawn for best results!"""
     
-    # Default farming response - use time-based for variety
-    import time
-    current_time_ms = int(time.time() * 1000)
-    
-    default_responses = [
-        "Hello! 👋 How can I help you with your farming today?",
-        "Hi there! 🌾 What would you like to know about your crops?",
-        "Hey! 💚 How can I assist you today?",
-        "Namaste! 🌾 What would you like to know about farming?",
-        "Hello, friend! 👨‍🌾 Ask me about crops, weather, prices, or any farming topic!",
-        "Hi! 🌟 I'm here to help with your farming needs. What would you like to know?",
-        "Welcome! 🌾 How can I help you grow better?",
-        "Hello! 🌱 What farming questions do you have today?",
-        "Greetings, farmer! 🌻 How can I help you today?",
-        "Namaste, friend! 🚜 What would you like to ask about?"
+    # For unrecognized messages - ask clarifying question
+    clarify_responses = [
+        f"I see! Tell me more about what you'd like to know - I'm here to help! 🌾",
+        f"That's interesting! 💚 Would you like to ask about farming, weather, prices, or something else?",
+        f"I understand! 🌱 How can I help you specifically? Ask me about crops, diseases, soil, or irrigation!",
+        f"Got it! 🚜 What farming topic can I help you with today?",
+        f"I'd love to help! 💧 Ask me about weather, crops, prices, or just share how you're feeling."
     ]
     
-    # Use time-based selection for guaranteed variety
-    print(f"DEBUG: Returning fallback. time_ms={current_time_ms}")
-    return default_responses[current_time_ms % len(default_responses)]
+    # If message is just random characters, still respond helpfully
+    if len(user_message.strip()) < 3:
+        return clarify_responses[current_time_ms % len(clarify_responses)]
+    
+    # For any other message - try to be helpful
+    return f"""I understand you said: "{user_message}" 🌾
+
+I can help you with:
+• 🌤️ Weather & forecasts
+• 💰 Market prices
+• 🌱 Crop recommendations  
+• 🩺 Plant diseases
+• 💧 Irrigation tips
+• 🧪 Soil health
+
+What would you like to know more about?"""
 
 
 def detect_emotion(text):
