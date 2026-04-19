@@ -4237,8 +4237,10 @@ elif menu == get_text("menu_emotion", global_lang):
             
             if response:
                 print(f"Cohere returned: {response[:80]}...")
+                # USE THE COHERE RESPONSE - don't fall through to fallback
             else:
-                print("Cohere returned None")
+                print("Cohere returned None - using fallback")
+                raise Exception("Empty response from Cohere")
             
             # If response is None or empty, use fallback
             if not response or response.strip() == "":
