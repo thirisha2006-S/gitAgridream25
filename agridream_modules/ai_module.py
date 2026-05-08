@@ -382,13 +382,46 @@ def detect_emotion(text):
     return "happy"  # Default to happy
 
 
-def send_emergency_alert(farmer_name, phone, message):
-    """Send emergency SMS alert via RapidAPI SMS service
-    RapidAPI Key: User provided
+def send_ntfy_alert(topic, message, title=None, priority="high", tags=None):
+    """Send push notification via ntfy.sh
+    
+    Args:
+        topic: ntfy topic name
+        message: Alert message body
+        title: Optional title (shown in notification)
+        priority: Priority level: max, high, normal, low
+        tags: Comma-separated tags or list for emoji icons
     """
     try:
         import requests
-        import os
+        url = f"https://ntfy.sh/{topic}"
+        headers = {}
+        if title:
+            headers['Title'] = title
+        if priority:
+            headers['Priority'] = priority
+        if tags:
+            if isinstance(tags, list):
+                tags = ','.join(tags)
+            headers['Tags'] = tags
+        
+        response = requests.post(url, data=message.encode('utf-8'), headers=headers, timeout=10)
+        return response.status_code == 200
+    except Exception as e:
+        print(f"ntfy alert error: {e}")
+        return False
+
+
+def send_emergency_alert(farmer_name, phone, message):
+    """Send emergency alert via SMS (RapidAPI/Fast2SMS) and/or ntfy.sh push notification
+    
+    Tries SMS first using configured credentials, then optionally ntfy if NTFY_TOPIC is set.
+    Returns True if at least one channel succeeds.
+    """
+    import os  # Ensure os is available for environment variables and NTFY config
+    sms_success = False
+    try:
+        import requests
         from dotenv import load_dotenv
         
         load_dotenv()
@@ -409,45 +442,68 @@ def send_emergency_alert(farmer_name, phone, message):
             # Fallback to Fast2SMS
             fast2sms_api_key = os.getenv('FAST2SMS_API_KEY')
             if fast2sms_api_key:
-                return send_via_fast2sms(fast2sms_api_key, phone, message)
-            return False
-        
-        # Format phone number (India - 10 digits)
-        phone = phone.strip().replace('+', '').replace(' ', '')
-        if len(phone) == 10:
-            phone = '91' + phone
-        elif len(phone) == 11 and phone.startswith('0'):
-            phone = '91' + phone[1:]
-        
-        # Use RapidAPI - fast2sms service
-        url = "https://fast2sms.p.rapidapi.com/send"
-
-        payload = {
-            "message": message,
-            "language": "english",
-            "route": "p",
-            "numbers": phone
-        }
-
-        headers = {
-            "content-type": "application/json",
-            "X-RapidAPI-Key": rapidapi_key,
-            "X-RapidAPI-Host": "fast2sms.p.rapidapi.com"
-        }
-
-        response = requests.post(url, json=payload, headers=headers, timeout=15)
-        print(f"SMS alert response: {response.status_code} - {response.text}")
-        
-        # Check response properly
-        try:
-            resp_json = response.json()
-            return resp_json.get('return', False)
-        except:
-            return response.status_code == 200
-        
+                sms_success = send_via_fast2sms(fast2sms_api_key, phone, message)
+            else:
+                sms_success = False
+        else:
+            # Format phone number (India - 10 digits)
+            phone = phone.strip().replace('+', '').replace(' ', '')
+            if len(phone) == 10:
+                phone = '91' + phone
+            elif len(phone) == 11 and phone.startswith('0'):
+                phone = '91' + phone[1:]
+            
+            # Use RapidAPI - fast2sms service
+            url = "https://fast2sms.p.rapidapi.com/send"
+    
+            payload = {
+                "message": message,
+                "language": "english",
+                "route": "p",
+                "numbers": phone
+            }
+    
+            headers = {
+                "content-type": "application/json",
+                "X-RapidAPI-Key": rapidapi_key,
+                "X-RapidAPI-Host": "fast2sms.p.rapidapi.com"
+            }
+    
+            response = requests.post(url, json=payload, headers=headers, timeout=15)
+            print(f"SMS alert response: {response.status_code} - {response.text}")
+            
+            # Check response properly
+            try:
+                resp_json = response.json()
+                sms_success = resp_json.get('return', False)
+            except:
+                sms_success = response.status_code == 200
+                
     except Exception as e:
         print(f"SMS alert error: {e}")
-        return False
+        sms_success = False
+
+    # Attempt ntfy push notification if configured
+    ntfy_success = False
+    try:
+        ntfy_topic = os.getenv('NTFY_TOPIC')
+        if ntfy_topic:
+            ntfy_title = f"🚨 Emergency Alert: {farmer_name}"
+            # Include phone number in message for context
+            ntfy_message = f"Farmer: {farmer_name}\nContact: {phone}\nAlert: {message}"
+            ntfy_success = send_ntfy_alert(
+                ntfy_topic, 
+                ntfy_message, 
+                title=ntfy_title, 
+                priority="high", 
+                tags=["warning", "agriculture", "emergency"]
+            )
+            if ntfy_success:
+                print(f"ntfy alert sent to topic: {ntfy_topic}")
+    except Exception as e:
+        print(f"ntfy alert setup error: {e}")
+    
+    return sms_success or ntfy_success
 
 
 def send_via_fast2sms(api_key, phone, message):
